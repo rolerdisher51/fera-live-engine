@@ -1,9 +1,9 @@
 name: Fera Live Sync Engine
 
 on:
+workflow_dispatch:
 schedule:
 - cron: '*/10 15-21 * * *'
-workflow_dispatch:
 
 jobs:
 sync-live-data:
