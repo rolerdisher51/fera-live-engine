@@ -1,33 +1,31 @@
-STREAMING_CHUNK:Configuring workflow triggers and scheduling...
-
+# STREAMING_CHUNK:Configuring workflow triggers and scheduling...
 name: Fera Live Sync Engine
 
 on:
-workflow_dispatch:
-schedule:
-- cron: '*/10 15-21 * * *'
+  workflow_dispatch:
+  schedule:
+    - cron: '*/10 15-21 * * *'
 
-STREAMING_CHUNK:Defining sync job runner and execution steps...
-
+# STREAMING_CHUNK:Defining sync job runner and execution steps...
 jobs:
-sync-live-data:
-runs-on: ubuntu-latest
-timeout-minutes: 15
-steps:
-- name: Checkout repository
-uses: actions/checkout@v4
+  sync-live-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  - name: Set up Python
-    uses: actions/setup-python@v5
-    with:
-      python-version: '3.11'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-  - name: Install dependencies
-    run: pip install requests supabase
+      - name: Install dependencies
+        run: pip install requests supabase
 
-  - name: Run sync worker
-    env:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
-    run: python production_sync_worker.py
+      - name: Run sync worker
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+        run: python production_sync_worker.py
