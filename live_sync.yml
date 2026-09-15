@@ -1,6 +1,8 @@
 name: Fera Live Sync Engine
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
   schedule:
     - cron: '*/10 15-21 * * *'
@@ -10,19 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: Install dependencies
-        run: pip install requests supabase
-
-      - name: Run sync worker
-        env:
+      - run: pip install requests supabase
+      - env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
