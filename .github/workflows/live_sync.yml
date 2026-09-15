@@ -1,4 +1,4 @@
-STREAMING_CHUNK:Configuring workflow trigger events...
+STREAMING_CHUNK:Configuring workflow triggers and scheduling...
 
 name: Fera Live Sync Engine
 
@@ -7,21 +7,26 @@ workflow_dispatch:
 schedule:
 - cron: '*/10 15-21 * * *'
 
-STREAMING_CHUNK:Defining runner environment and permissions...
+STREAMING_CHUNK:Defining sync job runner and execution steps...
 
 jobs:
 sync-live-data:
 runs-on: ubuntu-latest
+timeout-minutes: 15
 steps:
-- uses: actions/checkout@v4
-- uses: actions/setup-python@v5
-with:
-python-version: '3.11'
-- name: Run sync worker
-env:
-SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
-run: |
-pip install requests supabase
-python production_sync_worker.py
+- name: Checkout repository
+uses: actions/checkout@v4
+
+  - name: Set up Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: '3.11'
+
+  - name: Run sync worker
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+    run: |
+      pip install requests supabase
+      python production_sync_worker.py
