@@ -328,3 +328,25 @@ def main():
 
 if __name__ == "__main__":
     main()
+# بخشی از کد تسویه نهایی مسابقه در فایل production_sync_worker.py
+# درج دائمی در آرشیو تاریخچه بدون حذف مسابقات گذشته:
+past_record = {
+    "id": f"AUTO-{m_id}-{int(time.time())}",
+    "fixture_id": f_id,
+    "match_date": str(datetime.date.today()), # ثبت تاریخ دقیق روز
+    "day_offset": 1,
+    "sport": "football",
+    "day_title": "دیروز (تسویه‌شده)",
+    "match_name": f"{home_team} {score_h} - {score_a} {away_team}",
+    "league": m.get("league"),
+    "pick": m.get("recommended_pick"),
+    "odds": m.get("odds"),
+    "final_score": f"{score_h} - {score_a}",
+    "status": status,
+    "status_label": status_label,
+    "profit_loss": profit_loss_amount,
+    "ai_review": review_text
+}
+supabase.table("matches_past").insert(past_record).execute()
+supabase.table("matches_today").delete().eq("id", m_id).execute()
+print(f"🏁 مسابقه به آرشیو دائمی گذشته اضافه شد: {past_record['match_name']}")
