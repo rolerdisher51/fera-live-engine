@@ -2,17 +2,17 @@ name: Fera Analyze Cloud Engine
 
 on:
   schedule:
-    # اجرا در ساعت ۵:۳۰ صبح به وقت ایران جهت ثبت بازی‌های روز
-    - cron: '0 2 * * *'
-    # پایش مداوم هر ۳۰ دقیقه جهت رهگیری نتایج زنده و تسویه سوت پایان
+    # ساعت ۱:۳۰ بامداد UTC (معادل ۵:۰۰ صبح به وقت تهران) جهت لود روزانه مسابقات
+    - cron: '30 1 * * *'
+    # اجرای مداوم هر ۳۰ دقیقه جهت پایش نتایج زنده، دقیقه بازی و تسویه سوت پایان
     - cron: '*/30 * * * *'
-  workflow_dispatch:
+  workflow_dispatch: # قابلیت اجرای دستی در هر لحظه
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: دریافت کدهای مخزن
+      - name: دریافت آخرین کدها
         uses: actions/checkout@v4
 
       - name: راه‌اندازی مفسر پایتون
@@ -21,12 +21,12 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: نصب وابستگی‌های مهندسی
+      - name: نصب پکیج‌ها
         run: |
           python -m pip install --upgrade pip
           pip install requests supabase
 
-      - name: اجرای ورکر پایش جهانی، شرط‌ساز و تسویه کارنامه
+      - name: اجرای ورکر تمام خودکار
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
