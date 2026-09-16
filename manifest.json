@@ -1,0 +1,26 @@
+{
+  "id": "com.feraanalyze.app",
+  "name": "فِرا آنالیز | تحلیل داده و احتمالات فوتبال",
+  "short_name": "فِرا آنالیز",
+  "description": "دستیار داده‌کاوی، تحلیل احتمالات ریاضی و رتبه‌بندی مسابقات فوتبال",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#060911",
+  "theme_color": "#060911",
+  "lang": "fa",
+  "dir": "rtl",
+  "categories": [
+    "sports",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "icon_256x256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
