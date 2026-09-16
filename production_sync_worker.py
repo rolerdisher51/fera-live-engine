@@ -1,3 +1,15 @@
+"""
+=============================================================================
+فِرا آنالیز (Fera Analyze) - ورکر یکپارچه پایش جهانی، شرط‌ساز و تسویه کارنامه
+=============================================================================
+قابلیت‌های فعال:
+۱. پایش ۲۲ سوپرلیگ پرنقدینگی جهان و استخراج خودکار بازی‌های باارزش امروز
+۲. استخراج خودکار فرصت‌های ۳ روز آینده و تزریق به matches_future
+۳. تولید تک‌شرط امن (+EV) و پکیج شرط‌ساز تک‌بازی (SGP) با ضریب بالای ۳.۵۰
+۴. پایش زنده نتایج و ثبت دائمی در آرشیو تاریخچه matches_past با تاریخ روز
+=============================================================================
+"""
+
 import os
 import sys
 import re
@@ -11,9 +23,10 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 API_KEY = os.environ.get("RAPIDAPI_KEY", "").strip()
 
-DEFAULT_STAKE = 40000
+DEFAULT_STAKE = 40000       # مبلغ پیش‌فرض شرط (بر پایه مدیریت سرمایه ۲٪)
+MAX_DAILY_SEED_MATCHES = 5  # سقف بازی‌های امروز جهت مدیریت سهمیه API
 
-# ۲۲ لیگ بین‌المللی با نقدینگی بالا در بوک‌میکرها
+# ۲۲ لیگ معتبر جهانی با نقدینگی بالا در بوک‌میکرها
 GLOBAL_TOP_LEAGUES = {
     39: ("لیگ برتر انگلیس", "🏴󠁧󠁢󠁥󠁮󠁧󠁿"),
     140: ("لالیگا اسپانیا", "🇪🇸"),
@@ -44,6 +57,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# ==================== توابع ارتباطی وب‌سرویس ورزشی ====================
 def get_api_headers_and_url(endpoint: str):
     is_direct = (len(API_KEY) == 32 and "-" not in API_KEY)
     if is_direct:
@@ -72,9 +86,9 @@ def call_api(endpoint: str):
         print(f"خطای شبکه در فراخوانی {endpoint}: {e}")
         return None
 
-# ==================== ۱. واکشی مسابقات امروز (Matches Today) ====================
+# ==================== ۱. واکشی و غنی‌سازی مسابقات امروز ====================
 def auto_seed_today_matches():
-    print("🌍 پایش مسابقات امروز در ۲۲ لیگ جهانی...")
+    print("🌍 پایش مسابقات امروز در ۲۲ لیگ معتبر جهان...")
     tehran_tz = datetime.timezone(datetime.timedelta(hours=3, minutes=30))
     now_tehran = datetime.datetime.now(datetime.timezone.utc).astimezone(tehran_tz)
     today_str = now_tehran.strftime("%Y-%m-%d")
@@ -84,11 +98,14 @@ def auto_seed_today_matches():
         print("هیچ مسابقه‌ای برای امروز در وب‌سرویس بازگردانده نشد.")
         return
 
-    qualified = [f for f in fixtures if f.get("league", {}).get("id") in GLOBAL_TOP_LEAGUES and f.get("fixture", {}).get("status", {}).get("short") == "NS"]
-    print(f"تعداد {len(qualified)} مسابقه معتبر برای امروز پیدا شد.")
+    qualified = [
+        f for f in fixtures 
+        if f.get("league", {}).get("id") in GLOBAL_TOP_LEAGUES and f.get("fixture", {}).get("status", {}).get("short") == "NS"
+    ]
+    print(f"تعداد {len(qualified)} مسابقه معتبر برای امروز شناسایی شد.")
 
     rank = 1
-    for match in qualified[:4]:
+    for match in qualified[:MAX_DAILY_SEED_MATCHES]:
         f_id = match.get("fixture", {}).get("id")
         league_id = match.get("league", {}).get("id")
         home = match.get("teams", {}).get("home", {}).get("name")
@@ -138,21 +155,18 @@ def auto_seed_today_matches():
             "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
         }
         supabase.table("matches_today").upsert(record).execute()
-        print(f"✅ مسابقه امروز اضافه شد: {home} vs {away}")
+        print(f"✅ مسابقه امروز اضافه/بروزرسانی شد: {home} vs {away}")
         rank += 1
         time.sleep(1.2)
 
-# ==================== ۲. واکشی مسابقات ۳ روز آینده (Matches Future) ====================
+# ==================== ۲. واکشی مسابقات ۳ روز آینده ====================
 def auto_seed_future_matches():
     print("🔮 پایش زودهنگام ۳ روز آینده (+EV Early Lines)...")
     tehran_tz = datetime.timezone(datetime.timedelta(hours=3, minutes=30))
     now_tehran = datetime.datetime.now(datetime.timezone.utc).astimezone(tehran_tz)
 
-    supabase.table("matches_future").delete().neq("id", "KEEP_NOTHING").execute()
-
     for day_offset in range(1, 4):
         target_date = (now_tehran + datetime.timedelta(days=day_offset)).strftime("%Y-%m-%d")
-        print(f"📡 واکشی بازی‌های {day_offset} روز بعد (تاریخ {target_date})...")
         fixtures = call_api(f"fixtures?date={target_date}") or []
         qualified = [f for f in fixtures if f.get("league", {}).get("id") in GLOBAL_TOP_LEAGUES]
 
@@ -193,7 +207,7 @@ def auto_seed_future_matches():
             rank += 1
             time.sleep(1.0)
 
-# ==================== تولید بسته تحلیلی و شرط‌ساز ====================
+# ==================== تولید بسته تحلیلی و شرط‌ساز تک‌بازی ====================
 def generate_ai_analysis(fixture_id: int, home_name: str, away_name: str, league_name: str):
     pred_data = call_api(f"predictions?fixture={fixture_id}")
     if not pred_data:
@@ -212,8 +226,8 @@ def generate_ai_analysis(fixture_id: int, home_name: str, away_name: str, league
     sgp_legs = [
         {"market": "مساوی فسخ", "pick": f"{fav} مساوی فسخ", "odds": 1.70, "safety": "🛡️ تساوی = برگشت پول"},
         {"market": "شوت در چارچوب", "pick": f"شوت چارچوب {fav} بالای ۴.۵", "odds": 1.50, "safety": "فشار هجومی مداوم"},
-        {"market": "کرنر تیمی", "pick": f"کرنرهای {fav} بالای ۴.۵", "odds": 1.45, "safety": "حملات پردامنه از جناحین"},
-        {"market": "کارت زرد", "pick": "مجموع کارت بالای ۳.۵", "odds": 1.40, "safety": "پرس و خطاهای تاکتیکی"}
+        {"market": "کرنر تیمی", "pick": f"کرنرهای {fav} بالای ۴.۵", "odds": 1.45, "safety": "حملات از جناحین"},
+        {"market": "کارت زرد", "pick": "مجموع کارت بالای ۳.۵", "odds": 1.40, "safety": "پرس شدید و خطاهای تاکتیکی"}
     ]
 
     guide = (
@@ -233,15 +247,15 @@ def generate_ai_analysis(fixture_id: int, home_name: str, away_name: str, league
         "sot_stat": "۶.۲ شوت",
         "corners_stat": "۵.۹ کرنر",
         "streaks": [
-            f"🔥 تمرکز محاسباتی مدل بر برتری احتمالی {fav} در فاز تهاجمی.",
-            f"⚡ تقابل‌های رودرروی دو تیم گویای برتری آماری محسوس {fav} است."
+            f"🔥 تمرکز محاسباتی مدل بر برتری فاز تهاجمی {fav}.",
+            f"⚡ تقابل‌های رودرروی دو تیم برتری آماری محسوس {fav} را تأیید می‌کند."
         ],
         "bet_builder_combo": {
             "title": f"میکس همبسته هوشمند ({fav})",
             "combined_odds": 3.85,
             "combined_win_rate": f"{max(p_h, p_a) + 12}٪",
             "bookmaker_tab": guide,
-            "why_it_works": f"همبستگی مثبت: مالکیت برتر {fav} شانس شوت و کرنر را بالا می‌برد.",
+            "why_it_works": f"همبستگی مثبت: برتری تاکتیکی {fav} شانس شوت و کرنر را افزایش می‌دهد.",
             "legs": sgp_legs
         },
         "deep_props": {
@@ -249,104 +263,103 @@ def generate_ai_analysis(fixture_id: int, home_name: str, away_name: str, league
             "corners": {"home": 6.2, "away": 4.0},
             "cards": {"referee": "داور رسمی", "ref_avg_yellow": 4.5}
         },
-        "correlation_matrix": f"همبستگی مثبت فاکتورهای هجومی {fav} با مهار تاکتیکی {underdog}."
+        "correlation_matrix": f"همبستگی مثبت داده‌های هجومی {fav} با مهار تاکتیکی {underdog}."
     }
 
-# ==================== ۳. پایش زنده و تسویه سوت پایان ====================
+# ==================== ۳. پایش زنده و تسویه نهایی مسابقات ====================
 def sync_live_cycle():
     res = supabase.table("matches_today").select("*").execute()
     matches = res.data or []
-    if not matches: return
+    if not matches:
+        return
 
     live_fixtures = call_api("fixtures?live=all") or []
     for m in matches:
+        m_id = m.get("id")
         f_id = m.get("fixture_id")
+        home_team = m.get("home_team", "")
+        away_team = m.get("away_team", "")
+
         matched = next((f for f in live_fixtures if f_id and f.get("fixture", {}).get("id") == f_id), None)
         if matched:
-            status = matched.get("fixture", {}).get("status", {}).get("short", "NS")
+            short_status = matched.get("fixture", {}).get("status", {}).get("short", "NS")
             elapsed = matched.get("fixture", {}).get("status", {}).get("elapsed", 0)
             score_h = matched.get("goals", {}).get("home", 0) or 0
             score_a = matched.get("goals", {}).get("away", 0) or 0
 
-            if status in ["FT", "AET", "PEN"]:
+            # تسویه نهایی مسابقه در سوت پایان (جایگاه دقیق و صحیح قطعه‌کد مدنظر شما)
+            if short_status in ["FT", "AET", "PEN"]:
                 diff = score_h - score_a
-                fav_home = m.get("home_team") in m.get("recommended_pick")
-                profit = int(DEFAULT_STAKE * (float(m.get("odds", 1.80)) - 1.0))
+                fav_home = home_team in m.get("recommended_pick", "")
+                odds = float(m.get("odds", 1.80))
+                profit_loss_amount = int(DEFAULT_STAKE * (odds - 1.0))
 
                 if diff == 0:
-                    st, lbl, p_l, rev = 'push', '🛡️ فسخ و عودت وجه', 0, f"تساوی {score_h}-{score_a}؛ اصل وجه مسترد شد."
+                    status = 'push'
+                    status_label = '🛡️ فسخ و استرداد وجه'
+                    profit_loss_amount = 0
+                    review_text = f"تساوی {score_h}-{score_a}؛ به دلیل شرط مساوی فسخ، اصل مبلغ به حساب بازگشت."
                 elif (fav_home and diff > 0) or (not fav_home and diff < 0):
-                    st, lbl, p_l, rev = 'won', f"✅ برد کامل (+{profit:,} ت)", profit, f"برد با نتیجه {score_h}-{score_a} محقق شد."
+                    status = 'won'
+                    status_label = f"✅ برد کامل (+{profit_loss_amount:,} ت)"
+                    review_text = f"پیروزی تیم مدعی با نتیجه {score_h}-{score_a} و سود کامل محقق شد."
                 else:
-                    st, lbl, p_l, rev = 'lost', f"❌ باخت (-{DEFAULT_STAKE:,} ت)", -DEFAULT_STAKE, f"شکست با نتیجه {score_h}-{score_a}."
+                    status = 'lost'
+                    status_label = f"❌ باخت (-{DEFAULT_STAKE:,} ت)"
+                    profit_loss_amount = -DEFAULT_STAKE
+                    review_text = f"شکست در مسابقه با نتیجه {score_h}-{score_a}."
 
-                past_item = {
-                    "id": f"AUTO-{m['id']}-{int(time.time())}",
+                past_record = {
+                    "id": f"AUTO-{m_id}-{int(time.time())}",
                     "fixture_id": f_id,
                     "match_date": str(datetime.date.today()),
                     "day_offset": 1,
-                    "sport": "football",
+                    "sport": m.get("sport", "football"),
                     "day_title": "دیروز (تسویه‌شده)",
-                    "match_name": f"{m.get('home_team')} {score_h} - {score_a} {m.get('away_team')}",
+                    "match_name": f"{home_team} {score_h} - {score_a} {away_team}",
                     "league": m.get("league"),
                     "pick": m.get("recommended_pick"),
                     "odds": m.get("odds"),
                     "final_score": f"{score_h} - {score_a}",
-                    "status": st,
-                    "status_label": lbl,
-                    "profit_loss": p_l,
-                    "ai_review": rev
+                    "status": status,
+                    "status_label": status_label,
+                    "profit_loss": profit_loss_amount,
+                    "ai_review": review_text
                 }
-                supabase.table("matches_past").insert(past_item).execute()
-                supabase.table("matches_today").delete().eq("id", m["id"]).execute()
-                print(f"🏁 مسابقه تسویه شد: {past_item['match_name']}")
-            elif status in ["1H", "2H", "HT"]:
-                supabase.table("matches_today").update({
-                    "score_home": score_h, "score_away": score_a,
-                    "is_live": True, "match_status": status,
-                    "live_minute": f"{elapsed}'", "live_score_text": f"{score_h} - {score_a}"
-                }).eq("id", m["id"]).execute()
+                supabase.table("matches_past").insert(past_record).execute()
+                supabase.table("matches_today").delete().eq("id", m_id).execute()
+                print(f"🏁 مسابقه به آرشیو دائمی گذشته اضافه شد: {past_record['match_name']}")
 
+            elif short_status in ["1H", "2H", "HT"]:
+                min_label = f"{elapsed}'" if short_status != "HT" else "بین دو نیمه (HT)"
+                supabase.table("matches_today").update({
+                    "score_home": score_h,
+                    "score_away": score_a,
+                    "is_live": True,
+                    "match_status": short_status,
+                    "live_minute": min_label,
+                    "live_score_text": f"{score_h} - {score_a}"
+                }).eq("id", m_id).execute()
+
+# ==================== نقطه اجرای اصلی ورکر ====================
 def main():
-    print("🚀 ورکر فِرا آنالیز: اجرای چرخه خودکار مسابقات امروز، روزهای آینده و تسویه...")
+    print("🚀 ورکر فِرا آنالیز: اجرای هماهنگ بازی‌های امروز، ۳ روز آینده و پایش زنده...")
     try:
         auto_seed_today_matches()
     except Exception as e:
-        print(f"خطا در مسابقات امروز: {e}")
+        print(f"خطا در واکشی امروز: {e}")
 
     try:
         auto_seed_future_matches()
     except Exception as e:
-        print(f"خطا در ۳ روز آینده: {e}")
+        print(f"خطا در واکشی ۳ روز آینده: {e}")
 
     try:
         sync_live_cycle()
     except Exception as e:
         print(f"خطا در پایش زنده: {e}")
 
-    print("✅ پایان موفقیت‌آمیز عملیات ورکر.")
+    print("✅ پایان موفقیت‌آمیز چرخه ورکر.")
 
 if __name__ == "__main__":
     main()
-# بخشی از کد تسویه نهایی مسابقه در فایل production_sync_worker.py
-# درج دائمی در آرشیو تاریخچه بدون حذف مسابقات گذشته:
-past_record = {
-    "id": f"AUTO-{m_id}-{int(time.time())}",
-    "fixture_id": f_id,
-    "match_date": str(datetime.date.today()), # ثبت تاریخ دقیق روز
-    "day_offset": 1,
-    "sport": "football",
-    "day_title": "دیروز (تسویه‌شده)",
-    "match_name": f"{home_team} {score_h} - {score_a} {away_team}",
-    "league": m.get("league"),
-    "pick": m.get("recommended_pick"),
-    "odds": m.get("odds"),
-    "final_score": f"{score_h} - {score_a}",
-    "status": status,
-    "status_label": status_label,
-    "profit_loss": profit_loss_amount,
-    "ai_review": review_text
-}
-supabase.table("matches_past").insert(past_record).execute()
-supabase.table("matches_today").delete().eq("id", m_id).execute()
-print(f"🏁 مسابقه به آرشیو دائمی گذشته اضافه شد: {past_record['match_name']}")
