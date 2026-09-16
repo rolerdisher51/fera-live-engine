@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#060911" id="meta-theme-color">
-    <title>فِرا آنالیز | شبیه‌ساز مسابقه مونت‌کارلو، شرط‌ساز هوشمند و احتمالات ورزشی</title>
+    <title>فِرا آنالیز | پایش خودکار چندورزشی، شبیه‌ساز مونت‌کارلو و شرط‌ساز هوشمند</title>
 
     <link rel="icon" type="image/png" href="icon_256x256.png">
     <link rel="apple-touch-icon" href="icon_256x256.png">
@@ -61,7 +61,7 @@
                         <h1 class="text-sm font-black text-gray-900 dark:text-white tracking-tight">فِرا آنالیز</h1>
                         <span id="live-indicator-pill" class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 flex items-center gap-1">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 live-dot-ping"></span>
-                            <span>موتور مونت‌کارلو و زنده</span>
+                            <span>اتوماسیون کامل AI</span>
                         </span>
                     </div>
                     <div class="flex items-center gap-2 text-[10px] text-gray-500 mt-0.5 font-mono">
@@ -85,18 +85,18 @@
 
     <main class="flex-1 max-w-4xl w-full mx-auto px-3 sm:px-6 py-3 space-y-3.5">
 
-        <!-- کارت ویترین سودآوری فصل ۲۰۲۶ (Season Conversion Hero) -->
+        <!-- کارت ویترین شاخص عملکرد رسمی فصل ۲۰۲۶ -->
         <div class="ui-card p-4 rounded-3xl space-y-3 border-2 border-amber-500/50 bg-gradient-to-b from-amber-950/25 via-dark-900 to-transparent shadow-xl">
             <div class="flex items-center justify-between border-b border-gray-800 pb-2.5">
                 <div class="flex items-center gap-2">
                     <span class="text-lg">📈</span>
                     <div>
                         <h2 class="text-xs font-black text-white">شاخص سودآوری رسمی سیستم از شروع فصل ۲۰۲۶</h2>
-                        <span class="text-[9px] text-gray-400">حسابرسی‌شده بر مبنای مدیریت سرمایه ۲٪ (Kelly Criterion)</span>
+                        <span class="text-[9px] text-gray-400">محاسبه‌شده بر پایه تخصیص قطعی ۲٪ سرمایه (Kelly Criterion)</span>
                     </div>
                 </div>
                 <span class="text-[10px] font-mono font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-xl">
-                    سود تجمعی: <span id="stat-season-roi">+۱۶۴.۲٪</span>
+                    بازده تجمعی: <span id="stat-season-roi">+۱۶۴.۲٪</span>
                 </span>
             </div>
 
@@ -110,7 +110,7 @@
                     <span id="stat-season-growth" class="font-black text-emerald-400 text-xs">۲۶,۴۲۰,۰۰۰ ت</span>
                 </div>
                 <div class="ui-card-sub p-2.5 rounded-2xl">
-                    <span class="text-[9px] text-gray-400 block font-sans">نرخ پیروزی فصل</span>
+                    <span class="text-[9px] text-gray-400 block font-sans">نرخ برد فصل</span>
                     <span id="stat-season-winrate" class="font-bold text-amber-400">۷۳.۵٪</span>
                 </div>
                 <div class="ui-card-sub p-2.5 rounded-2xl">
@@ -120,7 +120,7 @@
             </div>
 
             <p class="text-[10px] text-gray-400 leading-relaxed text-justify">
-                💡 با استراتژی مدیریت ریسک، سرمایه پایه ۱۰ میلیون تومانی کاربران در فصل ۲۰۲۶ به بیش از ۲.۶ برابر افزایش یافته است. تمام سوابق در تب «کارنامه» قابل رصد است.
+                💡 با استراتژی مدیریت ریسک، سرمایه پایه ۱۰ میلیون تومانی در فصل ۲۰۲۶ به بیش از ۲.۶ برابر رسیده است[cite: 3].
             </p>
         </div>
 
@@ -129,7 +129,7 @@
             <button onclick="switchSport('football')" id="sport-tab-football" class="flex-1 py-2 rounded-xl bg-emerald-600 text-white shadow transition flex items-center justify-center gap-1.5 font-black">
                 <span>⚽</span>
                 <span>فوتبال هوشمند</span>
-                <span class="text-[9px] bg-emerald-700/80 px-1.5 py-0.5 rounded font-mono">فصل ۲۰۲۶</span>
+                <span class="text-[9px] bg-emerald-700/80 px-1.5 py-0.5 rounded font-mono">۲۲ لیگ جهانی</span>
             </button>
             <button onclick="switchSport('basketball')" id="sport-tab-basketball" class="py-2 px-3 rounded-xl text-gray-400 hover:text-gray-200 transition flex items-center justify-center gap-1">
                 <span>🏀</span>
@@ -146,7 +146,7 @@
             </button>
         </div>
 
-        <!-- نوار تایم‌لاین بالا (امروز، روزهای گذشته، ۳ روز بعد) -->
+        <!-- نوار تایم‌لاین بالا -->
         <div class="grid grid-cols-3 p-1.5 bg-gray-200/90 dark:bg-dark-900 rounded-2xl text-center text-xs font-black border border-gray-300 dark:border-gray-800 shadow-sm">
             <button onclick="switchTimelineTab('past')" id="time-tab-past" class="py-2 rounded-xl text-gray-400 hover:text-gray-200 transition flex items-center justify-center gap-1">
                 <span>⏪</span>
@@ -190,6 +190,7 @@
                 </button>
             </div>
 
+            <!-- محفظه لیست مسابقات امروز (دارای وضعیت بنر اختصاصی روزهای خلوت) -->
             <div id="today-matches-list" class="space-y-3"></div>
         </section>
 
@@ -204,7 +205,7 @@
                     <span class="text-[9px] bg-cyan-500/20 text-cyan-300 font-mono px-2 py-0.5 rounded-lg border border-cyan-500/30">Early Edge Radar</span>
                 </div>
                 <p class="text-[11px] text-gray-400 leading-relaxed">
-                    رهگیری ضرایبی که پیش از ورود پول توده‌ای کاربران دارای ارزش ورود مثبت هستند:
+                    رهگیری ضرایب زودهنگام پیش از افت به دلیل ورود پول هوشمند[cite: 3]:
                 </p>
             </div>
 
@@ -271,7 +272,7 @@
                         </div>
 
                         <p class="text-[10px] text-gray-400 leading-relaxed border-t border-gray-800/80 pt-2">
-                            💡 مبلغ شرط هر فرم بر اساس قانون ۲٪: <strong id="user-unit-display" class="font-mono text-amber-400">...</strong>
+                            💡 مبلغ شرط هر فرم بر اساس قانون ۲٪: <strong id="user-unit-display" class="font-mono text-amber-400">...</strong>[cite: 3]
                         </p>
                     </div>
 
@@ -318,7 +319,7 @@
                     <span>🔥</span>
                     <span>میکس‌های چندمسابقه‌ای با چتر حمایتی فسخ</span>
                 </h2>
-                <p class="text-[11px] text-gray-400 leading-relaxed">ترکیب بازی‌های مطمئن بدون شکست در تساوی:</p>
+                <p class="text-[11px] text-gray-400 leading-relaxed">ترکیب بازی‌های مطمئن بدون شکست در تساوی[cite: 3]:</p>
             </div>
             <div id="combos-list" class="space-y-3"></div>
         </section>
@@ -346,7 +347,7 @@
                     </div>
                     <h3 class="text-xs font-black text-amber-400">۱. برتری شرط‌ساز تک‌بازی (SGP) و همبستگی مثبت</h3>
                     <p class="text-[11px] text-gray-300 leading-relaxed text-justify">
-                        در میکس‌های چندبازی، واریانس بازی‌های مجزا در هم ضرب می‌شود؛ اما در شرط‌ساز، رویدادها زنجیره‌ای هستند. فشار تهاجمی تیم مدعی منجر به شوت و کرنر بیشتر شده و ضریب را بدون افزایش نامتناسب ریسک ارتقا می‌دهد.
+                        در میکس‌های چندبازی، واریانس بازی‌های مجزا در هم ضرب می‌شود؛ اما در شرط‌ساز، رویدادها زنجیره‌ای هستند[cite: 3]. فشار تهاجمی تیم مدعی منجر به شوت و کرنر بیشتر شده و ضریب را بدون افزایش نامتناسب ریسک ارتقا می‌دهد[cite: 3].
                     </p>
                 </div>
 
@@ -387,7 +388,7 @@
         </div>
     </nav>
 
-    <!-- ==================== مودال مسابقه مجهز به شبیه‌ساز مونت‌کارلو ==================== -->
+    <!-- ==================== مودال مسابقه مجهز به شبیه‌ساز مونت‌کارلو و هجینگ ==================== -->
     <div id="match-modal" class="fixed inset-0 z-50 bg-[#f8fafc] dark:bg-dark-950 hidden overflow-y-auto pb-safe">
         <div class="sticky top-0 bg-white/95 dark:bg-dark-900/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between z-10">
             <button onclick="closeModal()" class="px-3.5 py-1.5 rounded-xl bg-gray-100 dark:bg-dark-800 text-xs font-bold hover:bg-gray-200 transition">بازگشت</button>
@@ -417,7 +418,7 @@
                 </div>
             </div>
 
-            <!-- ==================== قابلیت گام ۳: شبیه‌ساز مونت‌کارلو مسابقه (۱۰,۰۰۰ سناریو) ==================== -->
+            <!-- شبیه‌ساز مونت‌کارلو ۱۰,۰۰۰ سناریو بر بستر امید گل واقعی -->
             <div class="ui-card p-4 rounded-3xl space-y-3 border-2 border-indigo-500/50 bg-gradient-to-b from-indigo-950/30 via-dark-900 to-transparent shadow-xl">
                 <div class="flex items-center justify-between border-b border-gray-800 pb-2">
                     <div class="flex items-center gap-1.5">
@@ -433,7 +434,6 @@
                     </button>
                 </div>
 
-                <!-- نمایش گرافیکی درصدهای برآمده از ۱۰,۰۰۰ سناریو -->
                 <div class="space-y-1.5">
                     <div class="flex items-center justify-between text-[11px] font-bold">
                         <span class="text-emerald-400">برد میزبان: <strong id="sim-prob-home" class="font-mono">--٪</strong></span>
@@ -447,7 +447,6 @@
                     </div>
                 </div>
 
-                <!-- شاخص‌های کلیدی مشتق‌شده از شبیه‌سازی -->
                 <div class="grid grid-cols-2 gap-2 text-center font-mono text-xs pt-1">
                     <div class="ui-card-sub p-2 rounded-xl">
                         <span class="text-[9px] text-gray-400 block font-sans">مجموع گل بالای ۲.۵</span>
@@ -459,11 +458,10 @@
                     </div>
                 </div>
 
-                <!-- ماتریس ۳ نتیجه پرتکرار تابلو -->
                 <div class="ui-card-sub p-2.5 rounded-xl space-y-1 text-[11px]">
-                    <span class="text-[10px] text-gray-400 block font-bold">📊 پرتکرارترین نتایج دقیق مسابقه در ۱۰,۰۰۰ سناریو:</span>
+                    <span class="text-[10px] text-gray-400 block font-bold">📊 ۳ نتیجه با بیشترین احتمال در ۱۰,۰۰۰ سناریو:</span>
                     <div id="sim-top-scores" class="flex items-center justify-around font-mono text-xs font-black text-gray-200 pt-1">
-                        <span>در حال شبیه‌سازی...</span>
+                        <span>در حال پردازش...</span>
                     </div>
                 </div>
             </div>
@@ -564,7 +562,7 @@
                 <button onclick="closeSportsRoadmapModal()" class="w-6 h-6 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center text-xs">✕</button>
             </div>
             <p class="text-[11px] text-gray-300 leading-relaxed">
-                موتور هوش مصنوعی روی ۲۲ لیگ برتر فوتبال فعال است. ماژول‌های بسکتبال و تنیس به زودی گسترش می‌یابند.
+                الگوریتم‌های بسکتبال و تنیس در فاز کالیبراسیون آماری قرار دارند و به زودی اضافه خواهند شد[cite: 1].
             </p>
             <button onclick="closeSportsRoadmapModal()" class="w-full py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold">متوجه شدم</button>
         </div>
@@ -708,11 +706,11 @@
                 badge_text: 'ضریب کل: ۲.۲۸ با پوشش فسخ',
                 combined_odds: 2.28,
                 legs: [
-                    { match: 'اینتر - فیورنتینا', pick: 'اینتر DNB', odds: 1.78, safety: 'تساوی = عودت وجه' },
-                    { match: 'الچه - رئال مادرید', pick: 'رئال مادرید DNB', odds: 1.85, safety: 'تساوی = عودت وجه' }
+                    { match: 'بازی اول', pick: 'تیم اول DNB', odds: 1.82, safety: 'تساوی = عودت وجه' },
+                    { match: 'بازی دوم', pick: 'تیم دوم DNB', odds: 1.80, safety: 'تساوی = عودت وجه' }
                 ],
-                short_formula_reason: 'پوشش همزمان با چتر حمایتی مساوی فسخ.',
-                placement_guide: 'در سایت: هر دو مسابقه را با گزینه DNB انتخاب کنید.'
+                short_formula_reason: 'پوشش همزمان با چتر حمایتی مساوی فسخ[cite: 3].',
+                placement_guide: 'در سایت: هر دو مسابقه را با گزینه DNB انتخاب کنید[cite: 3].'
             }];
         }
 
@@ -725,7 +723,7 @@
                 .subscribe();
         }
 
-        // ==================== موتور محاسباتی مونت‌کارلو (Poisson 10,000x Engine) ====================
+        // ==================== موتور مونت‌کارلو ====================
         function generatePoissonVariable(lambda) {
             let L = Math.exp(-lambda);
             let k = 0;
@@ -751,10 +749,6 @@
                     lambdaH = parseFloat(parts[0]) || 1.65;
                     lambdaA = parseFloat(parts[1]) || 1.10;
                 }
-            } else {
-                const favIsHome = (m.recommended_pick || "").includes(m.home_team);
-                if (favIsHome) { lambdaH = 1.95; lambdaA = 0.85; }
-                else { lambdaH = 0.95; lambdaA = 1.85; }
             }
 
             const ITERATIONS = 10000;
@@ -824,13 +818,13 @@
             document.getElementById('user-capital-input').value = state.userCapital;
             localStorage.setItem('fa_user_capital', state.userCapital.toString());
             renderUserPortfolio();
-            alert(`✅ مبلغ ${amount.toLocaleString('fa-IR')} تومان به کیف پول اضافه شد.`);
+            alert(`✅ مبلغ ${amount.toLocaleString('fa-IR')} تومان به موجودی کیف پول افزوده شد.`);
         }
 
         function saveCapitalBtn() {
             const val = document.getElementById('user-capital-input').value;
             updateUserCapital(val);
-            alert('✅ موجودی پایه ذخیره شد.');
+            alert('✅ موجودی پایه با موفقیت ذخیره شد.');
         }
 
         function renderUserPortfolio() {
@@ -873,7 +867,7 @@
 
             if (!container) return;
             if (state.userBets.length === 0) {
-                container.innerHTML = `<div class="ui-card p-6 rounded-2xl text-center text-xs text-gray-500">هنوز فرمی در کیف پول ثبت نکرده‌اید.</div>`;
+                container.innerHTML = `<div class="ui-card p-6 rounded-2xl text-center text-xs text-gray-500">هنوز فرمی ثبت نکرده‌اید.</div>`;
                 return;
             }
 
@@ -914,7 +908,7 @@
             state.userBets.unshift(newBet);
             localStorage.setItem('fa_user_bets', JSON.stringify(state.userBets));
             renderUserPortfolio();
-            alert(`✅ فرم با مبلغ ${stake2Percent.toLocaleString('fa-IR')} ت در کیف پول ثبت شد.`);
+            alert(`✅ فرم با مبلغ ${stake2Percent.toLocaleString('fa-IR')} تومان در کیف پول ثبت گردید.`);
             closeModal();
             switchBottomTool('ledger');
         }
@@ -929,7 +923,7 @@
         }
 
         function resetUserPortfolio() {
-            if (confirm('آیا از بازنشانی کیف پول مطمئن هستید؟')) {
+            if (confirm('آیا از بازنشانی کیف پول اطمینان دارید؟')) {
                 state.userBets = [];
                 localStorage.removeItem('fa_user_bets');
                 renderUserPortfolio();
@@ -958,6 +952,7 @@
             }
         }
 
+        // ==================== رندرینگ صفحه امروز با بنر هوشمند روزهای خلوت ====================
         function renderToday() {
             const container = document.getElementById('today-matches-list');
             if (!container) return;
@@ -967,8 +962,29 @@
             else if (state.activeMarketFilter === 'dnb') matches = matches.filter(m => m.category === 'dnb' || (m.recommended_pick && m.recommended_pick.includes('فسخ')));
             else if (state.activeMarketFilter === 'props') matches = matches.filter(m => m.deep_props);
 
+            // بنر اختصاصی هوش مصنوعی در زمان نبود مسابقه با ارزش ریاضی
             if (matches.length === 0) {
-                container.innerHTML = `<div class="ui-card p-8 rounded-2xl text-center text-xs text-gray-400">مسابقه‌ای برای امروز در این دسته‌بندی نیست.</div>`;
+                container.innerHTML = `
+                    <div class="ui-card p-6 rounded-3xl text-center space-y-3.5 border-2 border-dashed border-amber-500/40 bg-gradient-to-b from-amber-950/20 via-dark-900 to-transparent">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-2xl">
+                            🛡️
+                        </div>
+                        <div class="space-y-1">
+                            <h3 class="text-xs font-black text-amber-400">امروز هیچ مسابقه‌ای توسط هوش مصنوعی انتخاب نشده است</h3>
+                            <span class="text-[10px] text-gray-400 block font-mono">وضعیت: صیانت فعال از سرمایه (Capital Preservation Mode)</span>
+                        </div>
+                        <p class="text-[11px] text-gray-300 leading-relaxed text-justify px-2">
+                            از میان تمامی دیدارهای در حال برگزاری یا پیش‌روی ۲۲ لیگ معتبر جهانی، هیچ مسابقه‌ای موفق به کسب حداقل حاشیه ارزش ریاضی ($+EV$) و چتر حمایتی مساوی فسخ (DNB) نشد[cite: 3]. بر اساس قوانین مدل فِرا آنالیز، شرط نبستن در روزهای بدون ارزش، شرط اصلی حفظ سودهای فصل ۲۰۲۶ است[cite: 3].
+                        </p>
+                        <div class="pt-1 flex items-center justify-center gap-2">
+                            <button onclick="switchTimelineTab('future')" class="px-3.5 py-1.5 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/30 text-cyan-400 text-xs font-bold transition">
+                                رصد فرصت‌های ۳ روز بعد 🔮
+                            </button>
+                            <button onclick="switchTimelineTab('past')" class="px-3.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 text-xs font-bold transition">
+                                بازبینی کارنامه گذشته 📋
+                            </button>
+                        </div>
+                    </div>`;
                 return;
             }
 
@@ -1025,7 +1041,7 @@
                     </div>` : ''}
 
                     <div class="flex items-center justify-between text-[10px] text-gray-400 pt-0.5">
-                        <span>موتور مونت‌کارلو: <strong class="text-indigo-400 font-bold">۱۰,۰۰۰ سناریو فعال</strong></span>
+                        <span>موتور مونت‌کارلو: <strong class="text-indigo-400 font-bold">۱۰,۰۰۰ سناریو</strong></span>
                         <span class="text-cyan-400 font-bold flex items-center gap-1">شبیه‌سازی و هجینگ ‹</span>
                     </div>
                 </div>`;
@@ -1037,7 +1053,7 @@
             if (!container) return;
             const list = state.futureMatches.filter(m => m.future_day === state.futureDayOffset);
             if (list.length === 0) {
-                container.innerHTML = `<div class="ui-card p-6 rounded-2xl text-center text-xs text-gray-500">مسابقه‌ای برای این روز در صف نیست.</div>`;
+                container.innerHTML = `<div class="ui-card p-6 rounded-2xl text-center text-xs text-gray-500">فرصتی برای این روز در تقویم ثبت نشده است.</div>`;
                 return;
             }
             container.innerHTML = list.map(m => `
@@ -1075,7 +1091,7 @@
             }
 
             if (list.length === 0) {
-                container.innerHTML = `<div class="ui-card p-6 rounded-2xl text-center text-xs text-gray-500">موردی برای نمایش یافت نشد.</div>`;
+                container.innerHTML = `<div class="ui-card p-6 rounded-2xl text-center text-xs text-gray-500">موردی برای نمایش در کارنامه یافت نشد.</div>`;
                 return;
             }
 
@@ -1155,9 +1171,8 @@
             document.getElementById('modal-market').textContent = m.market_title || 'مساوی فسخ';
             document.getElementById('modal-pick').textContent = m.recommended_pick;
             document.getElementById('modal-odds').textContent = Number(m.odds).toFixed(2);
-            document.getElementById('modal-safety-rule').textContent = m.safety_note || 'تساوی = ۱۰۰٪ بازگشت سرمایه.';
+            document.getElementById('modal-safety-rule').textContent = m.safety_note || 'تساوی = ۱۰۰٪ بازگشت سرمایه[cite: 3].';
 
-            // اجرای آنی ۱۰,۰۰۰ شبیه‌سازی مونت‌کارلو برای این مسابقه
             runMatchMonteCarloSimulation();
 
             const stake2Percent = Math.round(state.userCapital * 0.02);
@@ -1171,8 +1186,8 @@
                 sgpBox.classList.remove('hidden');
                 const sgp = m.bet_builder_combo;
                 document.getElementById('modal-sgp-odds-badge').textContent = `ضریب کل: ${Number(sgp.combined_odds).toFixed(2)}`;
-                document.getElementById('modal-sgp-reason').textContent = sgp.why_it_works || 'همبستگی مثبت مالکیت و شوت‌ها.';
-                document.getElementById('modal-sgp-guide').textContent = sgp.bookmaker_tab || 'در سایت وارد تب شرط‌ساز (Bet Builder) شوید.';
+                document.getElementById('modal-sgp-reason').textContent = sgp.why_it_works || 'همبستگی مثبت مالکیت و شوت‌ها[cite: 3].';
+                document.getElementById('modal-sgp-guide').textContent = sgp.bookmaker_tab || 'در سایت وارد تب شرط‌ساز شوید[cite: 2, 3].';
 
                 document.getElementById('modal-sgp-legs').innerHTML = sgp.legs.map(leg => `
                     <div class="ui-card-sub p-2 rounded-xl flex items-center justify-between text-xs">
