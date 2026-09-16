@@ -1,24 +1,35 @@
-name: Fera Live Sync Engine
+name: Fera Analyze Cloud Engine
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
   schedule:
-    - cron: '*/10 15-21 * * *'
+    # اجرا در ساعت ۵:۳۰ صبح به وقت ایران جهت ثبت بازی‌های روز
+    - cron: '0 2 * * *'
+    # پایش مداوم هر ۳۰ دقیقه جهت رهگیری نتایج زنده و تسویه سوت پایان
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
 
 jobs:
-  sync-live-data:
+  sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: دریافت کدهای مخزن
+        uses: actions/checkout@v4
+
+      - name: راه‌اندازی مفسر پایتون
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install requests supabase
-      - env:
+          cache: 'pip'
+
+      - name: نصب وابستگی‌های مهندسی
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests supabase
+
+      - name: اجرای ورکر پایش جهانی، شرط‌ساز و تسویه کارنامه
+        env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
-        run: python production_sync_worker.py
+        run: |
+          python production_sync_worker.py
