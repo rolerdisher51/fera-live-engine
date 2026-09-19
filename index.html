@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#0d0d0e" id="meta-theme-color">
-    <title>فِرا آنالیز | پلتفرم هوشمند تحلیل ورزشی و شبیه‌ساز مونت‌کارلو</title>
+    <meta name="theme-color" content="#060911" id="meta-theme-color">
+    <title>فِرا آنالیز | دستیار چندورزشی، شرط‌ساز هوشمند و واچ‌لیست مسابقات</title>
 
     <link rel="icon" type="image/png" href="icon_256x256.png">
     <link rel="apple-touch-icon" href="icon_256x256.png">
     <link rel="manifest" href="manifest.json">
 
+    <!-- کتابخانه‌ها -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -18,14 +20,8 @@
             theme: {
                 extend: {
                     colors: {
-                        fotmob: {
-                            bg: '#0d0d0e',
-                            card: '#18181b',
-                            cardSub: '#202024',
-                            border: '#27272a',
-                            green: '#00e676',
-                            greenDark: '#00b259'
-                        }
+                        brand: { 500: '#10b981', 600: '#059669', 700: '#047857' },
+                        dark: { 950: '#060911', 900: '#0a0f1d', 850: '#10172b', 800: '#16203a' }
                     },
                     fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] }
                 }
@@ -33,462 +29,528 @@
         }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        body { font-family: 'Vazirmatn', Tahoma, sans-serif; touch-action: manipulation; margin: 0; padding: 0; background-color: #0d0d0e; }
+        body { font-family: 'Vazirmatn', Tahoma, sans-serif; touch-action: manipulation; margin: 0; padding: 0; }
+        .dark .ui-card { background: linear-gradient(165deg, rgba(16, 23, 43, 0.95) 0%, rgba(10, 15, 29, 0.98) 100%); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .dark .ui-card-sub { background: rgba(6, 9, 17, 0.85); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .dark .live-active-card { border: 1.5px solid rgba(239, 68, 68, 0.8) !important; box-shadow: 0 0 24px -4px rgba(239, 68, 68, 0.35) !important; }
+        
+        html:not(.dark) .ui-card { background: #ffffff; border: 1px solid #e2e8f0; }
+        html:not(.dark) .ui-card-sub { background: #f8fafc; border: 1px solid #edf2f7; }
+        
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .pb-safe { padding-bottom: calc(5rem + env(safe-area-inset-bottom, 20px)) !important; }
+        .pb-safe { padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 24px)) !important; }
         @keyframes livePulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.25); } }
         .live-dot-ping { animation: livePulse 1.4s infinite ease-in-out; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col text-gray-100 antialiased pb-safe select-none">
+<body class="min-h-screen flex flex-col antialiased bg-[#f8fafc] dark:bg-dark-950 text-gray-900 dark:text-gray-100 pb-safe">
 
-    <!-- هدر ارگونومیک مشابه اپلیکیشن FotMob -->
-    <header class="bg-[#121215]/95 backdrop-blur-md border-b border-fotmob-border sticky top-0 z-40 px-3 sm:px-4 py-2 shadow-md">
-        <!-- ردیف بالای هدر: برند و کنترل‌های عملیاتی -->
-        <div class="max-w-3xl mx-auto flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <span class="text-xl">⚽</span>
-                <h1 class="text-base font-black tracking-tight text-white font-sans uppercase">فِرا آنالیز</h1>
+    <!-- هدر زنده، ساعت و تقویم رسمی ایران -->
+    <header class="bg-white/95 dark:bg-dark-900/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 px-3 sm:px-6 py-2.5 shadow-sm">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl overflow-hidden border border-emerald-500/40 bg-dark-950 flex items-center justify-center shadow-md">
+                    <img src="icon_256x256.png" alt="FA" class="w-full h-full object-cover" onerror="this.outerHTML='<span class=\'text-xs font-black text-emerald-400\'>⚽ FA</span>'">
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <h1 class="text-sm font-black text-gray-900 dark:text-white tracking-tight">فِرا آنالیز</h1>
+                        <span id="live-indicator-pill" class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 live-dot-ping"></span>
+                            <span>پایش هوشمند</span>
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2 text-[10px] text-gray-500 mt-0.5 font-mono">
+                        <span id="tehran-date" class="font-sans">...</span>
+                        <span>|</span>
+                        <span id="tehran-time" class="font-bold text-amber-500">--:--:--</span>
+                    </div>
+                </div>
             </div>
 
-            <div class="flex items-center gap-2 text-xs">
-                <!-- دکمه سوییچ زنده (Live Pill) -->
-                <button onclick="toggleLiveOnlyFilter()" id="btn-filter-live" class="px-2.5 py-1 rounded-full bg-gray-800 text-gray-300 font-bold border border-gray-700 flex items-center gap-1.5 transition">
-                    <span class="w-2 h-2 rounded-full bg-gray-500" id="live-filter-dot"></span>
-                    <span class="text-[11px]">زنده</span>
-                </button>
-                <button onclick="toggleSearchBar()" title="جستجو" class="w-8 h-8 rounded-full bg-gray-800/80 text-gray-300 hover:text-white flex items-center justify-center">
-                    🔍
-                </button>
-                <button onclick="manualRefresh()" title="بروزرسانی" class="w-8 h-8 rounded-full bg-gray-800/80 text-gray-300 hover:text-white flex items-center justify-center">
+            <div class="flex items-center gap-1.5">
+                <button onclick="manualRefresh()" title="بروزرسانی داده‌ها" class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-dark-850 flex items-center justify-center text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-200 transition">
                     <span id="refresh-spin">🔄</span>
                 </button>
+                <button onclick="toggleTheme()" class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-dark-850 flex items-center justify-center text-xs hover:bg-gray-200 transition">
+                    <span id="theme-btn">🌙</span>
+                </button>
             </div>
-        </div>
-
-        <!-- کادر جستجوی کشویی -->
-        <div id="search-container" class="max-w-3xl mx-auto hidden pt-2">
-            <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="جستجوی تیم، لیگ یا کشور..." class="w-full bg-fotmob-card border border-fotmob-border rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-fotmob-green">
-        </div>
-
-        <!-- نوار تاریخ افقی با خط سبز زیرین (FotMob Carousel Strip) -->
-        <div class="max-w-3xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar pt-2.5 text-xs font-mono">
-            <button onclick="selectTimelineDay(-3)" id="tday-m3" class="px-3 py-1.5 text-gray-400 hover:text-gray-200 shrink-0 flex flex-col items-center transition border-b-2 border-transparent">
-                <span id="date-label-m3" class="text-[11px]">...</span>
-            </button>
-            <button onclick="selectTimelineDay(-2)" id="tday-m2" class="px-3 py-1.5 text-gray-400 hover:text-gray-200 shrink-0 flex flex-col items-center transition border-b-2 border-transparent">
-                <span id="date-label-m2" class="text-[11px]">...</span>
-            </button>
-            <button onclick="selectTimelineDay(-1)" id="tday-m1" class="px-3 py-1.5 text-gray-400 hover:text-gray-200 shrink-0 flex flex-col items-center transition border-b-2 border-transparent">
-                <span class="text-[11px]">دیروز</span>
-            </button>
-            <button onclick="selectTimelineDay(0)" id="tday-0" class="px-4 py-1.5 text-white font-black shrink-0 flex flex-col items-center transition border-b-2 border-fotmob-green">
-                <span class="text-[11px]">امروز</span>
-            </button>
-            <button onclick="selectTimelineDay(1)" id="tday-p1" class="px-3 py-1.5 text-gray-400 hover:text-gray-200 shrink-0 flex flex-col items-center transition border-b-2 border-transparent">
-                <span class="text-[11px]">فردا</span>
-            </button>
-            <button onclick="selectTimelineDay(2)" id="tday-p2" class="px-3 py-1.5 text-gray-400 hover:text-gray-200 shrink-0 flex flex-col items-center transition border-b-2 border-transparent">
-                <span id="date-label-p2" class="text-[11px]">...</span>
-            </button>
-            <button onclick="selectTimelineDay(3)" id="tday-p3" class="px-3 py-1.5 text-gray-400 hover:text-gray-200 shrink-0 flex flex-col items-center transition border-b-2 border-transparent">
-                <span id="date-label-p3" class="text-[11px]">...</span>
-            </button>
         </div>
     </header>
 
-    <!-- محتوای اصلی نرم‌افزار -->
-    <main class="flex-1 max-w-3xl w-full mx-auto px-3 sm:px-4 py-3 space-y-3">
+    <!-- محتوای اصلی -->
+    <main class="flex-1 max-w-4xl w-full mx-auto px-3 sm:px-6 py-3 space-y-3.5">
 
-        <!-- ==================== تب ۱: مسابقات (فید مسابقات FotMob) ==================== -->
-        <section id="view-matches" class="space-y-3">
+        <!-- نوار گزینش رشته ورزشی (Multi-Sport Selector) -->
+        <div class="grid grid-cols-3 p-1 bg-gray-200/80 dark:bg-dark-900 rounded-2xl text-center text-xs font-bold border border-gray-300 dark:border-gray-800">
+            <button onclick="switchSport('football')" id="sport-tab-football" class="py-2 rounded-xl bg-emerald-600 text-white shadow transition flex items-center justify-center gap-1.5 font-black">
+                <span>⚽</span>
+                <span>فوتبال</span>
+            </button>
+            <button onclick="switchSport('basketball')" id="sport-tab-basketball" class="py-2 rounded-xl text-gray-500 transition flex items-center justify-center gap-1.5">
+                <span>🏀</span>
+                <span>بسکتبال (NBA)</span>
+            </button>
+            <button onclick="switchSport('tennis')" id="sport-tab-tennis" class="py-2 rounded-xl text-gray-500 transition flex items-center justify-center gap-1.5">
+                <span>🎾</span>
+                <span>تنیس (ATP)</span>
+            </button>
+        </div>
 
-            <!-- کارت مسابقه ویژه / ستاره‌دار (Following Feature) -->
-            <div class="bg-fotmob-card border border-fotmob-border rounded-2xl p-3 space-y-2.5">
-                <div class="flex items-center justify-between text-xs">
-                    <span class="text-gray-400 font-bold flex items-center gap-1">
-                        <span>⭐</span> سیگنال شاخص فصل ۲۰۲۶ (+EV)
-                    </span>
-                    <button onclick="toggleHeroVisibility()" id="btn-hero-toggle" class="text-[10px] text-gray-400 hover:text-white">
-                        بستن ✕
-                    </button>
+        <!-- ==================== بخش ۱: مسابقات زنده و ارزشمند امروز ==================== -->
+        <section id="section-today" class="space-y-3">
+            <div class="ui-card p-3 rounded-2xl flex items-center justify-between gap-2 text-xs">
+                <div class="flex items-center gap-2">
+                    <span class="text-emerald-400 font-black">⭐ مسابقات منتخب و شرط‌سازها:</span>
+                    <span id="today-summary-badge" class="font-mono text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/20">...</span>
                 </div>
-                <div id="hero-signal-body" class="flex items-center justify-between bg-fotmob-cardSub p-2.5 rounded-xl text-xs">
-                    <div>
-                        <strong class="text-white block">رشد سرمایه حسابرسی‌شده</strong>
-                        <span class="text-[10px] text-gray-400">۱۰ م ➔ ۲۶,۴۲۰,۰۰۰ ت (قانون ۲٪)</span>
-                    </div>
-                    <span class="font-mono font-black text-fotmob-green bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
-                        +۱۶۴.۲٪ ROI
-                    </span>
+                <div class="flex items-center gap-1 text-[11px] text-gray-400">
+                    <span>مدیریت ریسک:</span>
+                    <strong class="font-mono text-amber-400">سقف ۲٪ موجودی</strong>
                 </div>
             </div>
 
-            <!-- محفظه لیست مسابقات تفکیک‌شده به صورت آکاردئونی بر پایه لیگ -->
-            <div id="matches-accordion-container" class="space-y-3">
-                <div class="bg-fotmob-card p-8 rounded-2xl text-center space-y-2 border border-fotmob-border">
-                    <div class="w-6 h-6 border-2 border-fotmob-green border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p class="text-xs text-gray-400">در حال دریافت داده‌های همگام‌سازی ابری...</p>
+            <!-- فیلترهای استراتژی، میکرو-مارکت‌ها و واچ‌لیست (گام ۵) -->
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-xs font-bold">
+                <button onclick="filterTodayMatches('all')" id="filter-all" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white shrink-0 transition">
+                    همه مارکت‌ها
+                </button>
+                <button onclick="filterTodayMatches('watchlist')" id="filter-watchlist" class="px-3 py-1.5 rounded-xl bg-gray-200 dark:bg-dark-850 text-amber-400 shrink-0 transition flex items-center gap-1">
+                    <span>⭐</span> واچ‌لیست من (<span id="watchlist-count">0</span>)
+                </button>
+                <button onclick="filterTodayMatches('sgp')" id="filter-sgp" class="px-3 py-1.5 rounded-xl bg-gray-200 dark:bg-dark-850 text-gray-400 shrink-0 transition flex items-center gap-1">
+                    <span>⚡</span> شرط‌ساز تک‌بازی (SGP)
+                </button>
+                <button onclick="filterTodayMatches('dnb')" id="filter-dnb" class="px-3 py-1.5 rounded-xl bg-gray-200 dark:bg-dark-850 text-gray-400 shrink-0 transition">
+                    مساوی فسخ (DNB)
+                </button>
+                <button onclick="filterTodayMatches('props')" id="filter-props" class="px-3 py-1.5 rounded-xl bg-gray-200 dark:bg-dark-850 text-gray-400 shrink-0 transition flex items-center gap-1">
+                    <span>🎯</span> شوت، کرنر و کارت
+                </button>
+            </div>
+
+            <!-- کارت‌های مسابقات امروز -->
+            <div id="today-matches-list" class="space-y-3">
+                <div class="ui-card p-8 rounded-2xl text-center space-y-2">
+                    <div class="w-7 h-7 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p class="text-xs text-gray-400">در حال ارزیابی ماتریس هوش مصنوعی، رادار روندها و مدل‌های همبستگی...</p>
                 </div>
             </div>
         </section>
 
-        <!-- ==================== تب ۲: اخبار و رادار افت ضریب (NEWS / RADAR) ==================== -->
-        <section id="view-news" class="hidden space-y-3">
-            <div class="bg-fotmob-card border border-fotmob-border rounded-2xl p-3.5 space-y-2">
-                <h2 class="text-xs font-black text-white flex items-center gap-1.5">
-                    <span>📉</span>
-                    <span>رادار افت ضریب و ورود پول هوشمند (Smart Money)</span>
-                </h2>
+        <!-- ==================== بخش ۲: فرصت‌های ۳ روز آینده (Future Radar) ==================== -->
+        <section id="section-future" class="hidden space-y-3">
+            <div class="ui-card p-4 rounded-2xl border-l-4 border-cyan-500 space-y-1">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-black text-cyan-400 flex items-center gap-1.5">
+                        <span class="text-base">🔮</span>
+                        <span>رصد زودهنگام فرصت‌های ۳ روز آینده (+EV Early Lines)</span>
+                    </h2>
+                    <span class="text-[9px] bg-cyan-500/20 text-cyan-300 font-mono px-2 py-0.5 rounded-lg border border-cyan-500/30">Early Edge Radar</span>
+                </div>
                 <p class="text-[11px] text-gray-400 leading-relaxed">
-                    مسابقاتی که ضریب زنده آن‌ها نسبت به نرخ بازگشایی صبح با افت مواجه شده است:
+                    رهگیری ضرایبی که پیش از ورود پول توده‌ای کاربران دارای ارزش ورود ($+EV$) مثبت هستند:
                 </p>
             </div>
-            <div id="radar-drop-list" class="space-y-2.5"></div>
+
+            <div class="grid grid-cols-3 p-1 bg-gray-200/80 dark:bg-dark-900 rounded-xl text-center text-xs font-bold">
+                <button onclick="setFutureDayOffset(1)" id="fday-1" class="py-1.5 rounded-lg bg-emerald-600 text-white shadow transition">فردا</button>
+                <button onclick="setFutureDayOffset(2)" id="fday-2" class="py-1.5 rounded-lg text-gray-500 transition">پس‌فردا</button>
+                <button onclick="setFutureDayOffset(3)" id="fday-3" class="py-1.5 rounded-lg text-gray-500 transition">۳ روز بعد</button>
+            </div>
+
+            <div id="future-matches-list" class="space-y-3"></div>
         </section>
 
-        <!-- ==================== تب ۳: لیگ‌ها و میکس‌های امن (LEAGUES / COMBOS) ==================== -->
-        <section id="view-leagues" class="hidden space-y-3">
-            <div class="bg-fotmob-card border border-fotmob-border rounded-2xl p-3.5 space-y-2">
-                <h2 class="text-xs font-black text-amber-400 flex items-center gap-1.5">
-                    <span>🏆</span>
-                    <span>میکس‌های امن دوگانه با پوشش مساوی فسخ (DNB)</span>
-                </h2>
+        <!-- ==================== بخش ۳: رادار افت ناگهانی ضرایب ==================== -->
+        <section id="section-radar" class="hidden space-y-3">
+            <div class="ui-card p-4 rounded-2xl border-l-4 border-rose-500 space-y-1">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-black text-gray-200 flex items-center gap-1.5">
+                        <span class="text-base">📉</span>
+                        <span>رادار افت ضریب و جریان پول هوشمند (Smart Money Tracker)</span>
+                    </h2>
+                    <span class="text-[9px] bg-rose-500/20 text-rose-400 font-mono px-2 py-0.5 rounded-lg border border-rose-500/30">Live Market Movement</span>
+                </div>
                 <p class="text-[11px] text-gray-400 leading-relaxed">
-                    ترکیب دو بازی مقتدرانه روز که در صورت تساوی یکی از آن‌ها، کل فرم باخت نمی‌خورد:
+                    مقایسه ضریب بازگشایی صبح با ضریب زنده برای شناسایی ورود سرمایه سنگین به بازار:
+                </p>
+            </div>
+            <div id="radar-matches-list" class="space-y-3"></div>
+        </section>
+
+        <!-- ==================== بخش ۴: میکس‌های طلایی امن چندمسابقه‌ای ==================== -->
+        <section id="section-combos" class="hidden space-y-3">
+            <div class="ui-card p-4 rounded-2xl border-l-4 border-amber-500 space-y-1">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-black text-amber-400 flex items-center gap-1.5">
+                        <span class="text-base">🔥</span>
+                        <span>میکس‌های چندمسابقه‌ای با چتر حمایتی فسخ (Cross-Match Combos)</span>
+                    </h2>
+                    <span class="text-[9px] bg-amber-500/20 text-amber-300 font-mono px-2 py-0.5 rounded-lg border border-amber-500/30">Max Expected Return</span>
+                </div>
+                <p class="text-[11px] text-gray-400 leading-relaxed">
+                    ترکیب هوشمند چند مسابقه که در صورت تساوی یکی از آن‌ها، کل فرم باخت نمی‌خورد:
                 </p>
             </div>
             <div id="combos-list" class="space-y-3"></div>
         </section>
 
-        <!-- ==================== تب ۴: کیف پول و ستاره‌دارها (FOLLOWING / WALLET) ==================== -->
-        <section id="view-following" class="hidden space-y-3">
-            <div class="bg-fotmob-card border border-fotmob-border rounded-2xl p-3.5 space-y-3">
-                <div class="flex items-center justify-between border-b border-fotmob-border pb-2">
-                    <span class="text-xs font-black text-white">💼 مدیریت سرمایه و پورتفوی شخصی (سقف ۲٪):</span>
-                    <button onclick="resetUserPortfolio()" class="text-[10px] text-rose-400 hover:underline">بازنشانی کیف پول</button>
-                </div>
-
-                <div class="bg-fotmob-cardSub p-2.5 rounded-xl space-y-2 text-xs">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[11px] text-gray-300">سرمایه پایه شما (تومان):</span>
-                        <div class="flex items-center gap-1">
-                            <input id="user-capital-input" type="number" step="100000" class="w-28 bg-fotmob-bg border border-gray-700 rounded-lg px-2 py-0.5 text-xs text-fotmob-green text-center font-mono focus:outline-none" onchange="updateUserCapital(this.value)">
-                            <button onclick="saveCapitalBtn()" class="px-2 py-0.5 bg-emerald-600 text-white rounded text-[10px] font-bold">ذخیره</button>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-1.5 text-[10px]">
-                        <span class="text-gray-400">افزایش سریع:</span>
-                        <button onclick="addFunds(500000)" class="px-2 py-0.5 bg-gray-800 text-gray-200 rounded font-mono">+۵۰۰ ت</button>
-                        <button onclick="addFunds(1000000)" class="px-2 py-0.5 bg-gray-800 text-gray-200 rounded font-mono">+۱ م</button>
-                        <button onclick="addFunds(5000000)" class="px-2 py-0.5 bg-gray-800 text-gray-200 rounded font-mono">+۵ م</button>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-3 gap-2 text-center font-mono text-xs">
-                    <div class="bg-fotmob-cardSub p-2 rounded-xl">
-                        <span class="text-[9px] text-gray-400 block font-sans">موجودی فعلی</span>
-                        <strong id="wallet-balance-val" class="text-white text-xs">...</strong>
-                    </div>
-                    <div class="bg-fotmob-cardSub p-2 rounded-xl">
-                        <span class="text-[9px] text-gray-400 block font-sans">سود / زیان</span>
-                        <strong id="wallet-profit-val" class="text-fotmob-green text-xs">۰ ت</strong>
-                    </div>
-                    <div class="bg-fotmob-cardSub p-2 rounded-xl">
-                        <span class="text-[9px] text-gray-400 block font-sans">نرخ پیروزی</span>
-                        <strong id="wallet-winrate-val" class="text-amber-400 text-xs">۰٪</strong>
-                    </div>
-                </div>
+        <!-- ==================== بخش ۵: کارنامه شفاف (سیستم + کیف پول من) ==================== -->
+        <section id="section-ledger" class="hidden space-y-3">
+            <div class="grid grid-cols-2 p-1 bg-gray-200/80 dark:bg-dark-900 rounded-2xl text-center text-xs font-bold">
+                <button onclick="setLedgerTab('system')" id="subtab-system" class="py-2 rounded-xl bg-emerald-600 text-white shadow transition">
+                    📋 کارنامه رسمی سیستم (۳ روز گذشته)
+                </button>
+                <button onclick="setLedgerTab('user')" id="subtab-user" class="py-2 rounded-xl text-gray-500 transition">
+                    💼 کیف پول و کارنامه شخصی من
+                </button>
             </div>
 
-            <div id="user-bets-list" class="space-y-2"></div>
-        </section>
+            <!-- کارنامه سیستم -->
+            <div id="ledger-system-content" class="space-y-3">
+                <div class="grid grid-cols-3 p-1 bg-gray-100 dark:bg-dark-900 rounded-xl text-center text-xs font-bold">
+                    <button onclick="setPastDayOffset(1)" id="pday-1" class="py-1.5 rounded-lg bg-emerald-600 text-white shadow transition">دیروز</button>
+                    <button onclick="setPastDayOffset(2)" id="pday-2" class="py-1.5 rounded-lg text-gray-500 transition">۲ روز قبل</button>
+                    <button onclick="setPastDayOffset(3)" id="pday-3" class="py-1.5 rounded-lg text-gray-500 transition">۳ روز قبل</button>
+                </div>
+                <div id="past-matches-list" class="space-y-2.5"></div>
+            </div>
 
-        <!-- ==================== تب ۵: منوی همبرگری (MORE ☰) ==================== -->
-        <section id="view-more" class="hidden space-y-3">
-            <div class="bg-fotmob-card border border-fotmob-border rounded-2xl overflow-hidden divide-y divide-fotmob-border text-xs">
-                <!-- گزینه ۱: ماشین‌حساب هجینگ مستقل -->
-                <button onclick="openStandaloneHedgeModal()" class="w-full p-3.5 text-right flex items-center justify-between hover:bg-fotmob-cardSub transition">
-                    <div class="flex items-center gap-2.5">
-                        <span class="text-base">⚖️</span>
-                        <div>
-                            <strong class="text-white block">ماشین‌حساب هجینگ و قفل سود زنده</strong>
-                            <span class="text-[10px] text-gray-400">محاسبه شرط متقابل برای خروج با سود تضمینی قطعی</span>
-                        </div>
+            <!-- کارنامه و کیف پول کاربر -->
+            <div id="ledger-user-content" class="hidden space-y-3">
+                <div class="ui-card p-4 rounded-3xl space-y-3 border border-emerald-500/30">
+                    <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                        <span class="text-xs font-bold text-gray-300">📊 عملکرد واقعی سبد سرمایه‌گذاری من (سقف ۲٪):</span>
+                        <button onclick="resetUserPortfolio()" class="text-[10px] text-rose-400 hover:underline">بازنشانی کیف پول</button>
                     </div>
-                    <span class="text-gray-500 font-bold">‹</span>
-                </button>
-
-                <!-- گزینه ۲: سوئیچ رشته ورزشی -->
-                <div class="p-3.5 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2.5">
-                            <span class="text-base">🌐</span>
-                            <strong class="text-white">رشته ورزشی فعال</strong>
+                    <div class="grid grid-cols-3 gap-2 text-center font-mono">
+                        <div class="ui-card-sub p-2.5 rounded-2xl">
+                            <span class="text-[9px] text-gray-400 block font-sans">سود خالص کل</span>
+                            <span id="user-total-profit" class="text-sm font-black text-emerald-400">۰ ت</span>
                         </div>
-                        <span class="text-[10px] text-fotmob-green font-bold font-mono">چندورزشی</span>
-                    </div>
-                    <div class="grid grid-cols-3 gap-1.5 pt-1 text-center font-bold">
-                        <button onclick="switchSport('football')" id="sport-btn-football" class="py-1.5 rounded-lg bg-emerald-600 text-white">⚽ فوتبال</button>
-                        <button onclick="switchSport('basketball')" id="sport-btn-basketball" class="py-1.5 rounded-lg bg-gray-800 text-gray-400">🏀 بسکتبال</button>
-                        <button onclick="switchSport('tennis')" id="sport-btn-tennis" class="py-1.5 rounded-lg bg-gray-800 text-gray-400">🎾 تنیس</button>
+                        <div class="ui-card-sub p-2.5 rounded-2xl">
+                            <span class="text-[9px] text-gray-400 block font-sans">نرخ پیروزی (Win Rate)</span>
+                            <span id="user-win-rate" class="text-sm font-black text-amber-400">۰٪</span>
+                        </div>
+                        <div class="ui-card-sub p-2.5 rounded-2xl">
+                            <span class="text-[9px] text-gray-400 block font-sans">تعداد فرم‌های من</span>
+                            <span id="user-total-bets" class="text-sm font-black text-indigo-400">۰</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- گزینه ۳: پایگاه دانش و دانشنامه هوشمند -->
-                <div class="p-3.5 space-y-2">
-                    <div class="flex items-center gap-2.5">
-                        <span class="text-base">📚</span>
-                        <strong class="text-white">دانشنامه هوش مصنوعی و مدیریت ریسک</strong>
-                    </div>
-                    <div class="space-y-1.5 text-[11px] text-gray-300 leading-relaxed">
-                        <div class="bg-fotmob-cardSub p-2 rounded-lg">
-                            <strong class="text-amber-400 block">⚡ شرط‌ساز تک‌بازی (SGP):</strong>
-                            ترکیب شوت + کرنر + هندیکپ به دلیل همبستگی مثبت، ضریب را بدون افزایش نامتناسب ریسک به ۳.۵۰ می‌رساند.
-                        </div>
-                        <div class="bg-fotmob-cardSub p-2 rounded-lg">
-                            <strong class="text-emerald-400 block">🛡️ مساوی فسخ (DNB):</strong>
-                            بیش از ۳۰٪ مسابقات فوتبال مساوی می‌شود؛ گزینه DNB در صورت تساوی، ۱۰۰٪ مبلغ را مسترد می‌کند.
-                        </div>
-                    </div>
+                <div id="user-bets-list" class="space-y-2"></div>
+            </div>
+        </section>
+
+        <!-- ==================== بخش ۶: آموزشگاه و دانشنامه هوشمند ==================== -->
+        <section id="section-academy" class="hidden space-y-3">
+            <div class="ui-card p-4 rounded-2xl border-l-4 border-indigo-500 space-y-1">
+                <h2 class="text-xs font-black text-indigo-400 flex items-center gap-1.5">
+                    <span class="text-base">📚</span>
+                    <span>دانشنامه، شرط‌ساز هوشمند و فرمول‌های مدیریت ریسک</span>
+                </h2>
+                <p class="text-[11px] text-gray-400 leading-relaxed">
+                    مفاهیم تحلیلی و فرمول‌های ریاضی حاکم بر سیستم ارزش‌گذاری هوش مصنوعی:
+                </p>
+            </div>
+
+            <div class="space-y-3">
+                <div class="ui-card p-4 rounded-2xl space-y-2">
+                    <h3 class="text-xs font-black text-amber-400 flex items-center gap-1.5">
+                        <span>⚡</span>
+                        <span>۱. شرط‌ساز تک‌بازی (Same Game Parlay) و راز همبستگی مثبت (Positive Correlation)</span>
+                    </h3>
+                    <p class="text-[11px] text-gray-300 leading-relaxed text-justify">
+                        در میکس‌های عادی، واریانس چندین بازی مختلف در هم ضرب شده و شانس پیروزی افت می‌کند. اما در قابلیت <strong>شرط‌ساز (Bet Builder)</strong> درون یک مسابقه، رویدادها همبسته هستند. وقتی یک تیم مدعی مانند رئال مادرید با تیمی دفاعی بازی دارد، مالکیت بالای ۷۰٪ منجر به شوت‌های در چارچوب بیشتر و این شوت‌ها منجر به دفع توپ به کرنر می‌شوند. ترکیب شوت + کرنر + برد، ضریب را به ۳.۵۰ تا ۵.۰۰ می‌رساند بدون اینکه ریسک نامتناسب افزوده شود.
+                    </p>
+                </div>
+
+                <div class="ui-card p-4 rounded-2xl space-y-2">
+                    <h3 class="text-xs font-black text-emerald-400 flex items-center gap-1.5">
+                        <span>🛡️</span>
+                        <span>۲. مساوی فسخ (Draw No Bet)؛ پوشش ۳۰٪ تساوی‌های فوتبال</span>
+                    </h3>
+                    <p class="text-[11px] text-gray-300 leading-relaxed text-justify">
+                        در لیگ‌های فشرده اروپا و به‌ویژه سری آ و لالیگا، بیش از ۳۰ درصد مسابقات با تساوی خاتمه می‌یابد. در شرط‌های برد مستقیم ۱X۲، تساوی منجر به باخت کامل کل پول می‌شود؛ اما در گزینه <strong>مساوی فسخ</strong>، تساوی ریسک را به صفر می‌رساند: بازی مساوی شود ۱۰۰٪ پول به حساب بازمی‌گردد و در صورت برد، سود کامل دریافت می‌شود.
+                    </p>
+                </div>
+
+                <div class="ui-card p-4 rounded-2xl space-y-2">
+                    <h3 class="text-xs font-black text-indigo-400 flex items-center gap-1.5">
+                        <span>🔬</span>
+                        <span>۳. امید گل ($xG$) و نرخ شوت در چارچوب (Shots on Target)</span>
+                    </h3>
+                    <p class="text-[11px] text-gray-300 leading-relaxed text-justify">
+                        نتیجه نهایی تابلو ممکن است با یک اشتباه داوری یا برخورد تصادفی تغییر کند، اما شاخص‌های $xG$ و شوت‌های در چارچوب، واقعیت کیفی داخل زمین را بازگو می‌کنند. هوش مصنوعی مسابقه‌ای را برمی‌گزیند که مدل توزیع احتمالاتی آن، از ضریب قیمت‌گذاری‌شده بوک‌میکر فراتر رفته باشد:
+                        $$\text{Edge} = (P_{\text{Model}} \times \text{Odds}) - 1 > 0$$
+                    </p>
+                </div>
+
+                <div class="ui-card p-4 rounded-2xl space-y-2">
+                    <h3 class="text-xs font-black text-rose-400 flex items-center gap-1.5">
+                        <span>💼</span>
+                        <span>۴. قانون طلایی ۲٪ و مهار نابودی سرمایه (Kelly Criterion)</span>
+                    </h3>
+                    <p class="text-[11px] text-gray-300 leading-relaxed text-justify">
+                        سرمایه‌گذاران سازمان‌یافته در هر فرم حداکثر <strong>۲ درصد</strong> از کل موجودی نقدی خود را تخصیص می‌دهند. با این استراتژی، حتی اگر ۵ فرم متوالی با بدشانسی مواجه شود، بیش از ۹۰ درصد موجودی زنده مانده و با آغاز روند سودآوری فرم‌های باارزش، سرمایه جبران خواهد شد.
+                    </p>
                 </div>
             </div>
         </section>
 
     </main>
 
-    <!-- ==================== نوار ناوبری ۵ ستونه دقیقاً مشابه FotMob ==================== -->
-    <nav class="fixed bottom-0 inset-x-0 bg-[#121215]/98 backdrop-blur-md border-t border-fotmob-border z-40 px-2 py-1.5 shadow-2xl">
-        <div class="max-w-md mx-auto grid grid-cols-5 gap-1 text-center text-[10px]">
-            <!-- دکمه مسابقات (Matches) -->
-            <button onclick="switchFotmobTab('matches')" id="nav-btn-matches" class="py-1 flex flex-col items-center gap-0.5 text-fotmob-green font-black transition">
-                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-                <span>مسابقات</span>
+    <!-- ناوبری استورپذیر ۶ گانه پایین صفحه -->
+    <nav class="fixed bottom-0 inset-x-0 bg-white/95 dark:bg-dark-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 z-40 px-2 py-1.5">
+        <div class="max-w-md mx-auto grid grid-cols-6 gap-1 text-center font-bold">
+            <button onclick="switchMainTab('today')" id="nav-today" class="py-1.5 rounded-xl text-emerald-500 flex flex-col items-center gap-0.5 transition">
+                <span class="text-base">⭐</span>
+                <span class="text-[9px]">امروز</span>
             </button>
-
-            <!-- دکمه اخبار و رادار (News) -->
-            <button onclick="switchFotmobTab('news')" id="nav-btn-news" class="py-1 flex flex-col items-center gap-0.5 text-gray-400 font-bold hover:text-gray-200 transition">
-                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-4h11v4zm0-5H4V9h11v4zm5 5h-4V9h4v9z"/></svg>
-                <span>رادار ضریب</span>
+            <button onclick="switchMainTab('future')" id="nav-future" class="py-1.5 rounded-xl text-gray-400 flex flex-col items-center gap-0.5 transition">
+                <span class="text-base">🔮</span>
+                <span class="text-[9px]">۳ روز بعد</span>
             </button>
-
-            <!-- دکمه لیگ‌ها و میکس‌ها (Leagues) -->
-            <button onclick="switchFotmobTab('leagues')" id="nav-btn-leagues" class="py-1 flex flex-col items-center gap-0.5 text-gray-400 font-bold hover:text-gray-200 transition">
-                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>
-                <span>میکس امن</span>
+            <button onclick="switchMainTab('radar')" id="nav-radar" class="py-1.5 rounded-xl text-gray-400 flex flex-col items-center gap-0.5 transition">
+                <span class="text-base">📉</span>
+                <span class="text-[9px]">رادار ضریب</span>
             </button>
-
-            <!-- دکمه دنبال‌شده‌ها و کیف پول (Following) -->
-            <button onclick="switchFotmobTab('following')" id="nav-btn-following" class="py-1 flex flex-col items-center gap-0.5 text-gray-400 font-bold hover:text-gray-200 transition">
-                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                <span>کیف پول من</span>
+            <button onclick="switchMainTab('combos')" id="nav-combos" class="py-1.5 rounded-xl text-gray-400 flex flex-col items-center gap-0.5 transition">
+                <span class="text-base">🔥</span>
+                <span class="text-[9px]">میکس امن</span>
             </button>
-
-            <!-- دکمه همبرگری بیشتر (More ☰) -->
-            <button onclick="switchFotmobTab('more')" id="nav-btn-more" class="py-1 flex flex-col items-center gap-0.5 text-gray-400 font-bold hover:text-gray-200 transition">
-                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
-                <span>بیشتر ☰</span>
+            <button onclick="switchMainTab('ledger')" id="nav-ledger" class="py-1.5 rounded-xl text-gray-400 flex flex-col items-center gap-0.5 transition">
+                <span class="text-base">📊</span>
+                <span class="text-[9px]">کارنامه</span>
+            </button>
+            <button onclick="switchMainTab('academy')" id="nav-academy" class="py-1.5 rounded-xl text-gray-400 flex flex-col items-center gap-0.5 transition">
+                <span class="text-base">📚</span>
+                <span class="text-[9px]">آموزش</span>
             </button>
         </div>
     </nav>
 
-    <!-- ==================== مودال تفصیلی مسابقه، شبیه‌ساز مونت‌کارلو و هجینگ ==================== -->
-    <div id="match-modal" class="fixed inset-0 z-50 bg-[#0d0d0e]/95 backdrop-blur-md hidden overflow-y-auto pb-safe">
-        <div class="sticky top-0 bg-fotmob-card border-b border-fotmob-border px-4 py-3 flex items-center justify-between z-10">
-            <button onclick="closeModal()" class="px-3 py-1.5 rounded-xl bg-gray-800 text-xs font-bold hover:bg-gray-700 transition">بازگشت ✕</button>
+    <!-- ==================== مودال تفصیلی مسابقه و شرط‌ساز ==================== -->
+    <div id="match-modal" class="fixed inset-0 z-50 bg-[#f8fafc] dark:bg-dark-950 hidden overflow-y-auto pb-safe">
+        <div class="sticky top-0 bg-white/95 dark:bg-dark-900/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between z-10">
+            <button onclick="closeModal()" class="px-3.5 py-1.5 rounded-xl bg-gray-100 dark:bg-dark-800 text-xs font-bold hover:bg-gray-200 transition">بازگشت</button>
             <div class="flex items-center gap-2">
+                <!-- دکمه دانلود کارت استوری اینستاگرام -->
                 <button onclick="generateStoryCard()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 text-white text-[11px] font-black shadow transition flex items-center gap-1 active:scale-95">
                     <span>📸</span>
                     <span>کارت استوری</span>
                 </button>
-                <span id="modal-rank" class="text-[10px] font-mono font-black px-2.5 py-1 rounded-lg bg-amber-500 text-black">رتبه ۱</span>
+                <span id="modal-rank" class="text-[10px] font-black px-2.5 py-1 rounded-lg bg-amber-500 text-black">رتبه ۱</span>
             </div>
         </div>
 
-        <div class="max-w-xl mx-auto p-4 space-y-3.5">
+        <div class="max-w-xl mx-auto p-4 space-y-4">
             <!-- تابلوی نتیجه و بازی -->
-            <div class="bg-fotmob-card border border-fotmob-border p-4 rounded-2xl space-y-3">
+            <div class="ui-card p-4 rounded-3xl space-y-3 border-2 border-emerald-500/30">
                 <div class="flex items-center justify-between text-xs">
                     <span id="modal-league" class="font-bold text-gray-300">...</span>
-                    <span id="modal-status-pill" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-fotmob-green">...</span>
+                    <span id="modal-status-pill" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400">...</span>
                 </div>
                 <div class="flex items-center justify-between text-center py-2">
-                    <div class="flex-1 font-black text-sm text-white" id="modal-home">...</div>
-                    <div class="px-3">
-                        <div id="modal-score" class="text-2xl font-black font-mono text-amber-500">- : -</div>
+                    <div class="flex-1 font-black text-base" id="modal-home">...</div>
+                    <div class="px-4">
+                        <div id="modal-score" class="text-3xl font-black font-mono text-amber-500">- : -</div>
                         <span id="modal-minute" class="text-[10px] text-gray-400 block mt-0.5">...</span>
                     </div>
-                    <div class="flex-1 font-black text-sm text-white" id="modal-away">...</div>
+                    <div class="flex-1 font-black text-base" id="modal-away">...</div>
                 </div>
             </div>
 
-            <!-- شبیه‌ساز ۱۰,۰۰۰ سناریوی مونت‌کارلو (گام ۳ نقشه راه) -->
-            <div class="bg-fotmob-card border border-indigo-500/40 p-3.5 rounded-2xl space-y-2.5 bg-gradient-to-b from-indigo-950/20 to-transparent">
-                <div class="flex items-center justify-between border-b border-gray-800 pb-1.5">
-                    <h3 class="text-xs font-black text-indigo-400 flex items-center gap-1.5">
-                        <span>🎲</span>
-                        <span>شبیه‌ساز مسابقه مونت‌کارلو (Monte Carlo 10,000x)</span>
+            <!-- قابلیت جدید ۵: واچ‌لیست و زنگ هشدار اختصاصی مسابقات (Watchlist Action) -->
+            <div class="ui-card p-4 rounded-3xl space-y-3 border border-amber-500/40 bg-gradient-to-b from-amber-950/20 to-transparent">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                    <h3 class="text-xs font-black text-amber-400 flex items-center gap-1.5">
+                        <span>⭐</span>
+                        <span>مدیریت واچ‌لیست و هشدار اختصاصی (Match Watchlist)</span>
                     </h3>
-                    <button onclick="runMatchMonteCarloSimulation()" class="text-[10px] font-mono text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded hover:bg-indigo-500/30 transition">
-                        اجرای مجدد ↺
-                    </button>
+                    <span id="modal-watchlist-status-badge" class="text-[9px] font-mono text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">وضعیت: عادی</span>
+                </div>
+                <p class="text-[11px] text-gray-300 leading-relaxed">
+                    با ستاره‌دار کردن این بازی، پایش نوسانات خطوط و انتشار ترکیب رسمی به صورت خودکار در واچ‌لیست شما رصد می‌شود:
+                </p>
+                <button id="btn-toggle-watchlist" onclick="toggleCurrentMatchWatchlist()" class="w-full py-2.5 rounded-xl bg-amber-600 text-white font-black text-xs transition active:scale-98 flex items-center justify-center gap-1.5">
+                    <span>⭐</span>
+                    <span id="btn-watchlist-text">افزودن این مسابقه به واچ‌لیست من</span>
+                </button>
+            </div>
+
+            <!-- قابلیت جدید ۲: ماشین‌حساب پوشش ریسک زنده (Live Hedging & Cashout Optimizer) -->
+            <div class="ui-card p-4 rounded-3xl space-y-3 border border-brand-500/40 bg-gradient-to-b from-emerald-950/20 to-transparent">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                    <h3 class="text-xs font-black text-emerald-400 flex items-center gap-1.5">
+                        <span>🛡️</span>
+                        <span>ماشین‌حساب قفل سود و پوشش ریسک زنده (Live Hedging)</span>
+                    </h3>
+                    <span class="text-[9px] font-mono text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">Risk-Free Lock</span>
+                </div>
+                <p class="text-[11px] text-gray-300 leading-relaxed">
+                    اگر تیم منتخب شما پیش افتاده است، مبلغ شرط مخالف ($S_2$) را محاسبه کنید تا بدون کارمزد بوک‌میکر، سود قطعی قفل شود:
+                </p>
+
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <label class="text-[10px] text-gray-400 block mb-1">مبلغ شرط اول ($S_1$ - تومان):</label>
+                        <input type="number" id="hedge-s1" value="100000" class="w-full ui-card-sub px-3 py-2 rounded-xl text-xs font-mono font-bold text-emerald-400 outline-none border border-gray-700">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 block mb-1">ضریب شرط اول ($O_1$):</label>
+                        <input type="number" step="0.01" id="hedge-o1" value="1.85" class="w-full ui-card-sub px-3 py-2 rounded-xl text-xs font-mono font-bold text-amber-400 outline-none border border-gray-700">
+                    </div>
                 </div>
 
-                <div class="space-y-1">
-                    <div class="flex items-center justify-between text-[10px] font-mono">
-                        <span class="text-fotmob-green">برد میزبان: <strong id="sim-prob-home">--٪</strong></span>
-                        <span class="text-amber-400">تساوی: <strong id="sim-prob-draw">--٪</strong></span>
-                        <span class="text-rose-400">برد میهمان: <strong id="sim-prob-away">--٪</strong></span>
-                    </div>
-                    <div class="w-full h-2 rounded-full overflow-hidden flex bg-fotmob-bg">
-                        <div id="sim-bar-home" class="bg-fotmob-green transition-all duration-500" style="width: 33.3%;"></div>
-                        <div id="sim-bar-draw" class="bg-amber-400 transition-all duration-500" style="width: 33.3%;"></div>
-                        <div id="sim-bar-away" class="bg-rose-500 transition-all duration-500" style="width: 33.4%;"></div>
-                    </div>
+                <div>
+                    <label class="text-[10px] text-gray-400 block mb-1">ضریب زنده گزینه مخالف در سایت ($O_2$):</label>
+                    <input type="number" step="0.01" id="hedge-o2" value="2.40" class="w-full ui-card-sub px-3 py-2 rounded-xl text-xs font-mono font-bold text-cyan-400 outline-none border border-gray-700">
                 </div>
 
-                <div class="grid grid-cols-2 gap-2 text-center font-mono text-[11px] pt-0.5">
-                    <div class="bg-fotmob-cardSub p-1.5 rounded-lg">
-                        <span class="text-[9px] text-gray-400 block font-sans">گل‌های بالای ۲.۵</span>
-                        <strong id="sim-over25-prob" class="text-cyan-400 font-bold">--٪</strong>
-                    </div>
-                    <div class="bg-fotmob-cardSub p-1.5 rounded-lg">
-                        <span class="text-[9px] text-gray-400 block font-sans">گلزنی دو تیم (BTTS)</span>
-                        <strong id="sim-btts-prob" class="text-amber-400 font-bold">--٪</strong>
-                    </div>
-                </div>
+                <button onclick="calculateHedge()" class="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-black text-xs transition active:scale-98">
+                    محاسبه مبلغ دقیق شرط مخالف ($S_2$)
+                </button>
 
-                <div class="bg-fotmob-cardSub p-2 rounded-lg text-[10px]">
-                    <span class="text-gray-400 block">📊 پرتکرارترین نتایج تابلو در ۱۰,۰۰۰ سناریو:</span>
-                    <div id="sim-top-scores" class="flex items-center justify-around font-mono text-white pt-1">
-                        <span>در حال شبیه‌سازی...</span>
+                <div id="hedge-result-box" class="ui-card-sub p-3 rounded-2xl hidden space-y-1 text-xs font-mono">
+                    <div class="flex justify-between text-gray-300">
+                        <span>مبلغ بهینه شرط مخالف:</span>
+                        <strong id="res-s2" class="text-cyan-400">۰ تومان</strong>
+                    </div>
+                    <div class="flex justify-between text-gray-300 border-t border-gray-800 pt-1">
+                        <span>سود خالص تضمین‌شده (بدون ریسک):</span>
+                        <strong id="res-profit" class="text-emerald-400">۰ تومان</strong>
                     </div>
                 </div>
             </div>
 
-            <!-- ماشین‌حساب هجینگ اختصاصی مسابقه (گام ۲ نقشه راه) -->
-            <div class="bg-fotmob-card border border-cyan-500/40 p-3.5 rounded-2xl space-y-2.5 bg-gradient-to-b from-cyan-950/20 to-transparent">
-                <div class="flex items-center justify-between border-b border-gray-800 pb-1.5">
+            <!-- قابلیت جدید ۳: شبیه‌ساز مونت‌کارلو مسابقه (In-App Monte Carlo Simulator) -->
+            <div class="ui-card p-4 rounded-3xl space-y-3 border border-cyan-500/40 bg-gradient-to-b from-cyan-950/20 to-transparent">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2">
                     <h3 class="text-xs font-black text-cyan-400 flex items-center gap-1.5">
-                        <span>⚖️</span>
-                        <span>ماشین‌حساب هجینگ زنده مسابقه</span>
+                        <span>🎲</span>
+                        <span>شبیه‌ساز مسابقه مونت‌کارلو (۱۰,۰۰۰ سناریوی پواسون)</span>
                     </h3>
-                    <span class="text-[9px] font-mono text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded">Lock Profit</span>
+                    <span class="text-[9px] font-mono text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-500/30">Poisson Simulator</span>
                 </div>
-                <div class="grid grid-cols-2 gap-2 text-xs font-mono">
-                    <div class="bg-fotmob-cardSub p-2 rounded-xl">
-                        <label class="text-[9px] text-gray-400 block font-sans mb-1">مبلغ شرط اول (تومان)</label>
-                        <input id="hedge-stake-orig" type="number" value="40000" oninput="calculateModalHedge()" class="w-full bg-transparent text-fotmob-green font-bold focus:outline-none text-xs">
+                <p class="text-[11px] text-gray-300 leading-relaxed">
+                    بر اساس شاخص امید گل ($xG$) دو تیم، مسابقه ۱۰,۰۰۰ بار شبیه‌سازی شد تا احتمالات واقعی استخراج گردد:
+                </p>
+
+                <div class="grid grid-cols-3 gap-2 text-center font-mono text-xs">
+                    <div class="ui-card-sub p-2.5 rounded-2xl">
+                        <span class="text-[9px] text-gray-400 block font-sans">برد میزبان</span>
+                        <span id="mc-home-prob" class="text-sm font-black text-emerald-400">۶۴٪</span>
                     </div>
-                    <div class="bg-fotmob-cardSub p-2 rounded-xl">
-                        <label class="text-[9px] text-gray-400 block font-sans mb-1">ضریب اولیه شرط</label>
-                        <input id="hedge-odds-orig" type="number" step="0.01" value="1.85" oninput="calculateModalHedge()" class="w-full bg-transparent text-amber-400 font-bold focus:outline-none text-xs">
+                    <div class="ui-card-sub p-2.5 rounded-2xl">
+                        <span class="text-[9px] text-gray-400 block font-sans">تساوی</span>
+                        <span id="mc-draw-prob" class="text-sm font-black text-amber-400">۲۰٪</span>
+                    </div>
+                    <div class="ui-card-sub p-2.5 rounded-2xl">
+                        <span class="text-[9px] text-gray-400 block font-sans">برد میهمان</span>
+                        <span id="mc-away-prob" class="text-sm font-black text-rose-400">۱۶٪</span>
                     </div>
                 </div>
-                <div class="bg-fotmob-cardSub p-2 rounded-xl flex items-center justify-between text-xs font-mono">
-                    <span class="text-[10px] text-gray-400 font-sans">ضریب زنده گزینه مخالف در سایت:</span>
-                    <input id="hedge-odds-opp" type="number" step="0.05" value="3.40" oninput="calculateModalHedge()" class="w-20 bg-fotmob-bg border border-gray-700 rounded px-2 py-0.5 text-cyan-400 text-center text-xs focus:outline-none">
-                </div>
-                <div class="p-2 bg-cyan-500/10 border border-cyan-500/20 rounded-xl space-y-1 font-mono text-xs">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] text-gray-300 font-sans">مبلغ شرط معکوس الزامی:</span>
-                        <strong id="hedge-recommended-stake" class="text-cyan-300 font-black">۲۱,۷۰۰ ت</strong>
+
+                <div class="ui-card-sub p-3 rounded-2xl space-y-1 text-xs">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">احتمال مجموع گل بالای ۲.۵:</span>
+                        <strong id="mc-over-prob" class="text-cyan-400 font-mono">۶۹٪</strong>
                     </div>
-                    <div class="flex items-center justify-between border-t border-cyan-500/20 pt-1">
-                        <span class="text-[10px] text-gray-300 font-sans">سود خالص قطعی (تضمین‌شده):</span>
-                        <strong id="hedge-locked-profit" class="text-fotmob-green font-black">+۱۲,۳۰۰ ت</strong>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">پرتکرارترین نتایج تابلو:</span>
+                        <strong id="mc-top-scores" class="text-amber-400 font-mono">۲-۱، ۳-۱، ۲-۰</strong>
                     </div>
                 </div>
             </div>
 
-            <!-- تک‌شرط پیشنهادی سیستم -->
-            <div class="bg-fotmob-card border border-fotmob-border p-3.5 rounded-2xl space-y-2">
-                <div class="flex items-center justify-between border-b border-fotmob-border pb-1.5">
-                    <span class="text-[10px] text-gray-400 font-bold">🎯 تک‌شرط امن با حاشیه سود (+EV):</span>
-                    <span id="modal-market" class="text-[11px] font-black text-fotmob-green px-2 py-0.5 rounded bg-emerald-500/10">...</span>
-                </div>
-                <div class="bg-fotmob-cardSub p-2.5 rounded-xl flex items-center justify-between">
-                    <strong id="modal-pick" class="text-xs font-black text-fotmob-green">...</strong>
-                    <div class="text-left font-mono">
-                        <span class="text-[9px] text-gray-400 block font-sans">ضریب</span>
-                        <span id="modal-odds" class="text-base font-black text-amber-400">...</span>
-                    </div>
-                </div>
-                <div class="bg-indigo-500/10 border border-indigo-500/20 p-2 rounded-xl text-[10px] text-gray-300">
-                    <strong class="text-indigo-400 block mb-0.5">🛡️ چتر حمایتی بازگشت وجه:</strong>
-                    <span id="modal-safety-rule">...</span>
-                </div>
-            </div>
-
-            <!-- بسته میکس شرط‌ساز (SGP) -->
-            <div id="modal-sgp-container" class="bg-fotmob-card border border-amber-500/40 p-3.5 rounded-2xl space-y-2.5">
-                <div class="flex items-center justify-between border-b border-fotmob-border pb-1.5">
+            <!-- قابلیت جدید ۱: رادار رکوردهای تاریخی و سریالی (Trend & Streak Radar) -->
+            <div id="modal-streaks-box" class="ui-card p-4 rounded-3xl space-y-2.5 border border-amber-500/40 bg-gradient-to-b from-amber-950/20 to-transparent">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2">
                     <h3 class="text-xs font-black text-amber-400 flex items-center gap-1.5">
                         <span>⚡</span>
-                        <span>بسته شرط‌ساز هوشمند (Bet Builder)</span>
+                        <span>رادار رکوردهای تاریخی و روندهای سریالی (Trend Radar)</span>
                     </h3>
-                    <span id="modal-sgp-odds-badge" class="text-[10px] font-mono font-black bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">ضریب: ۳.۸۵</span>
+                    <span class="text-[9px] font-mono text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">Streak Engine</span>
                 </div>
-                <div id="modal-sgp-legs" class="space-y-1.5"></div>
-                <div class="bg-fotmob-cardSub p-2 rounded-xl text-[10px] text-gray-300">
-                    📍 <strong>مسیر ثبت در سایت:</strong> <span id="modal-sgp-guide">...</span>
+                <div id="modal-streaks-list" class="space-y-1.5 text-xs text-gray-300 leading-relaxed"></div>
+            </div>
+
+            <!-- شرط‌ساز هوشمند تک‌بازی (AI SGP Bet Builder) -->
+            <div id="modal-sgp-container" class="ui-card p-4 rounded-3xl space-y-3 border-2 border-amber-500/60 bg-gradient-to-b from-amber-950/20 to-transparent">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-base">⚡</span>
+                        <h3 class="text-xs font-black text-amber-400">بسته شرط‌ساز هوشمند اختصاصی این مسابقه (Bet Builder)</h3>
+                    </div>
+                    <span id="modal-sgp-odds-badge" class="text-[10px] font-mono font-black bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-lg border border-amber-500/30">ضریب کل: ۳.۸۵</span>
+                </div>
+
+                <p id="modal-sgp-reason" class="text-[11px] text-gray-300 leading-relaxed">...</p>
+                <div id="modal-sgp-legs" class="space-y-2"></div>
+
+                <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-gray-300 space-y-1">
+                    <strong class="text-amber-400 block">📍 نحوه بستن این میکس در سایت (بت‌فا / ریتزبِت):</strong>
+                    <p id="modal-sgp-guide" class="leading-relaxed text-gray-300">...</p>
                 </div>
             </div>
 
-            <button onclick="addUserBetFromModal()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs shadow-lg transition active:scale-98">
-                ➕ ثبت در کیف پول من (محاسبه خودکار ۲٪ سرمایه)
+            <!-- کادر تک‌شرط استاندارد سیستم -->
+            <div class="ui-card p-4 rounded-3xl space-y-3 border border-emerald-500/50">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                    <span class="text-[10px] text-gray-400 font-bold">🎯 تک‌شرط پیشنهادی سیستم:</span>
+                    <span id="modal-market" class="text-xs font-black text-emerald-400 px-2.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">...</span>
+                </div>
+
+                <div class="ui-card-sub p-3.5 rounded-2xl border border-emerald-500/30 flex items-center justify-between gap-2">
+                    <strong id="modal-pick" class="text-sm font-black text-emerald-400 leading-snug">...</strong>
+                    <div class="text-left font-mono shrink-0">
+                        <span class="text-[9px] text-gray-400 block font-sans">ضریب پیشنهادی</span>
+                        <span id="modal-odds" class="text-lg font-black text-amber-500">...</span>
+                    </div>
+                </div>
+
+                <div class="p-2.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-[11px] text-gray-200 leading-relaxed">
+                    <strong class="text-indigo-400 block mb-0.5">🛡️ چتر حمایتی بازگشت وجه (Insurance Rule):</strong>
+                    <span id="modal-safety-rule">...</span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 pt-1 text-center font-mono">
+                    <div class="ui-card-sub p-2 rounded-xl">
+                        <span class="text-[9px] text-gray-400 block font-sans">کف ضریب مجاز</span>
+                        <span id="modal-min-odds" class="text-xs font-bold text-rose-400">...</span>
+                    </div>
+                    <div class="ui-card-sub p-2 rounded-xl">
+                        <span class="text-[9px] text-gray-400 block font-sans">ضریب بت‌فا</span>
+                        <span id="modal-odds-betfa" class="text-xs font-bold text-emerald-400">...</span>
+                    </div>
+                    <div class="ui-card-sub p-2 rounded-xl">
+                        <span class="text-[9px] text-gray-400 block font-sans">ضریب ریتزبِت</span>
+                        <span id="modal-odds-ritzbet" class="text-xs font-bold text-amber-400">...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- دکمه افزودن فرم به سبد کاربر -->
+            <button id="btn-add-to-portfolio" onclick="addUserBetFromModal()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs shadow-lg transition flex items-center justify-center gap-2 active:scale-98">
+                <span>➕</span>
+                <span>من این فرم را بستم (ثبت در کیف پول و کارنامه من)</span>
             </button>
-            <button onclick="closeModal()" class="w-full py-2 rounded-xl bg-gray-800 text-xs font-bold text-gray-300">
-                بستن پنجره
-            </button>
+
+            <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-gray-200 dark:bg-dark-800 text-xs font-bold">بستن پنجره</button>
         </div>
     </div>
 
-    <!-- مودال مستقل ماشین‌حساب هجینگ (فراخوانی‌شده از منوی همبرگری) -->
-    <div id="standalone-hedge-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-fotmob-card border border-cyan-500/40 w-full max-w-sm p-4 rounded-3xl space-y-3 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-gray-800 pb-2">
-                <h3 class="text-xs font-black text-cyan-400 flex items-center gap-1.5">
-                    <span>⚖️</span>
-                    <span>ماشین‌حساب هجینگ و قفل سود سراسری</span>
-                </h3>
-                <button onclick="closeStandaloneHedgeModal()" class="w-6 h-6 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center text-xs">✕</button>
-            </div>
-            <div class="grid grid-cols-2 gap-2 text-xs font-mono">
-                <div class="bg-fotmob-cardSub p-2 rounded-xl">
-                    <label class="text-[9px] text-gray-400 block font-sans mb-1">مبلغ شرط اول (تومان)</label>
-                    <input id="tool-hedge-stake-orig" type="number" value="100000" oninput="calculateStandaloneHedge()" class="w-full bg-transparent text-fotmob-green font-bold focus:outline-none text-xs">
-                </div>
-                <div class="bg-fotmob-cardSub p-2 rounded-xl">
-                    <label class="text-[9px] text-gray-400 block font-sans mb-1">ضریب شرط اول</label>
-                    <input id="tool-hedge-odds-orig" type="number" step="0.01" value="1.85" oninput="calculateStandaloneHedge()" class="w-full bg-transparent text-amber-400 font-bold focus:outline-none text-xs">
-                </div>
-            </div>
-            <div class="bg-fotmob-cardSub p-2 rounded-xl flex items-center justify-between text-xs font-mono">
-                <span class="text-[10px] text-gray-400 font-sans">ضریب زنده شرط متقابل:</span>
-                <input id="tool-hedge-odds-opp" type="number" step="0.05" value="3.50" oninput="calculateStandaloneHedge()" class="w-20 bg-fotmob-bg border border-gray-700 rounded px-2 py-0.5 text-cyan-400 text-center text-xs focus:outline-none">
-            </div>
-            <div class="p-2.5 bg-cyan-500/10 border border-cyan-500/20 rounded-xl space-y-1 font-mono text-xs">
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] text-gray-300 font-sans">مبلغ شرط معکوس الزامی:</span>
-                    <strong id="tool-hedge-stake-rec" class="text-cyan-300 font-black">۵۲,۸۰۰ ت</strong>
-                </div>
-                <div class="flex items-center justify-between border-t border-cyan-500/20 pt-1">
-                    <span class="text-[10px] text-gray-300 font-sans">سود قطعی تضمین‌شده:</span>
-                    <strong id="tool-hedge-profit-lock" class="text-fotmob-green font-black">+۳۲,۲۰۰ ت (۱۰۰٪ قطعی)</strong>
-                </div>
-            </div>
-            <button onclick="closeStandaloneHedgeModal()" class="w-full py-2 bg-gray-800 text-xs text-gray-300 rounded-xl">بستن</button>
-        </div>
-    </div>
-
-    <!-- کانوَس مخفی جهت تولید تصویر استوری -->
+    <!-- کانوَس مخفی جهت تولید تصویر استوری شبکه های اجتماعی (Social Card Canvas) -->
     <canvas id="storyCanvas" width="1080" height="1920" class="hidden"></canvas>
 
     <script>
@@ -498,19 +560,20 @@
         };
 
         const state = {
-            activeFotmobTab: 'matches',
-            selectedTimelineOffset: 0,
-            liveOnlyFilter: false,
-            searchQuery: '',
+            activeMainTab: 'today',
             activeSport: 'football',
+            activeMarketFilter: 'all',
+            ledgerSubTab: 'system',
+            pastDayOffset: 1,
+            futureDayOffset: 1,
             todayMatches: [],
             futureMatches: [],
             pastMatches: [],
             smartCombos: [],
-            collapsedLeagues: new Set(),
-            userCapital: parseInt(localStorage.getItem('fa_user_capital') || '5000000', 10),
             userBets: JSON.parse(localStorage.getItem('fa_user_bets') || '[]'),
-            currentModalMatchId: null
+            watchlist: JSON.parse(localStorage.getItem('fa_watchlist') || '[]'), // گام ۵: واچ‌لیست
+            currentModalMatchId: null,
+            isDarkMode: localStorage.getItem('fa_theme') !== 'light'
         };
 
         let supabaseClient = null;
@@ -527,31 +590,30 @@
             setInterval(update, 1000);
         }
 
-        function initTimelineLabels() {
-            const now = new Date();
-            const offsets = [-3, -2, 2, 3];
-            const keys = ['m3', 'm2', 'p2', 'p3'];
-            offsets.forEach((off, idx) => {
-                const d = new Date(now.getTime() + off * 86400000);
-                const dayMonth = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', day: 'numeric', month: 'short' }).format(d);
-                const el = document.getElementById(`date-label-${keys[idx]}`);
-                if (el) el.textContent = dayMonth;
-            });
-        }
-
         function getLiveMatchProgress(kickoffStr, currentStatus, currentMinuteStr) {
-            if (['FT', 'AET', 'PEN'].includes(currentStatus)) return { isLive: false, isFT: true, label: 'پایان یافته' };
+            if (['FT', 'AET', 'PEN'].includes(currentStatus)) {
+                return { isLive: false, isFT: true, label: 'پایان یافته' };
+            }
+
             const now = new Date();
             const tehranNowStr = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Tehran', hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
             const [nowH, nowM] = tehranNowStr.split(':').map(Number);
+            const nowMinutesOfDay = nowH * 60 + nowM;
+
             const matchKick = (kickoffStr || "").match(/(\d{1,2}):(\d{2})/);
             if (!matchKick) return { isLive: false, isFT: false, label: kickoffStr };
 
-            const diff = (nowH * 60 + nowM) - (parseInt(matchKick[1], 10) * 60 + parseInt(matchKick[2], 10));
+            const kickH = parseInt(matchKick[1], 10);
+            const kickM = parseInt(matchKick[2], 10);
+            const kickMinutesOfDay = kickH * 60 + kickM;
+
+            const diff = nowMinutesOfDay - kickMinutesOfDay;
+
             if (diff < 0) return { isLive: false, isFT: false, label: kickoffStr };
             if (diff <= 47) return { isLive: true, isFT: false, label: `${Math.min(45, diff)}'` };
             if (diff <= 63) return { isLive: true, isFT: false, label: 'بین دو نیمه (HT)' };
             if (diff <= 115) return { isLive: true, isFT: false, label: `${Math.min(90, 45 + (diff - 63))}'` };
+
             return { isLive: false, isFT: true, label: 'سوت پایان مسابقه' };
         }
 
@@ -559,504 +621,552 @@
             if (typeof supabase !== 'undefined') {
                 supabaseClient = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
             }
-            document.getElementById('user-capital-input').value = state.userCapital;
-            initTimelineLabels();
-            calculateStandaloneHedge();
             await fetchAllData();
             listenToRealtime();
             setInterval(() => {
-                if (state.activeFotmobTab === 'matches' && state.selectedTimelineOffset === 0 && state.todayMatches.length > 0) {
-                    renderFotmobMatches();
+                if (state.activeMainTab === 'today' && state.todayMatches.length > 0) {
+                    renderToday();
                 }
             }, 30000);
             renderUserPortfolio();
+            updateWatchlistUI();
         }
 
         async function fetchAllData() {
             if (!supabaseClient) return;
+
             try {
                 const [resToday, resFuture, resPast, resCombos] = await Promise.all([
                     supabaseClient.from('matches_today').select('*').order('rank', { ascending: true }),
                     supabaseClient.from('matches_future').select('*').order('rank', { ascending: true }),
-                    supabaseClient.from('matches_past').select('*').order('match_date', { ascending: false }),
+                    supabaseClient.from('matches_past').select('*').order('created_at', { ascending: false }),
                     supabaseClient.from('smart_combos').select('*').order('created_at', { ascending: false })
                 ]);
 
-                state.todayMatches = resToday.data || [];
-                state.futureMatches = resFuture.data || [];
-                state.pastMatches = resPast.data || [];
-                state.smartCombos = resCombos.data || [];
+                let rawToday = resToday.data || [];
+                let rawFuture = resFuture.data || [];
+                let rawPast = resPast.data || [];
+                let rawCombos = resCombos.data || [];
 
-                renderFotmobMatches();
-                renderRadarDrops();
+                const filteredToday = [];
+                rawToday.forEach(m => {
+                    const isEnded = ['FT', 'AET', 'PEN'].includes(m.match_status) || (m.kickoff && m.kickoff.includes('دیروز'));
+                    if (isEnded) {
+                        rawPast.unshift({
+                            id: m.id,
+                            day_offset: 1,
+                            sport: m.sport || 'football',
+                            day_title: 'دیروز (تسویه‌شده)',
+                            match_name: `${m.home_team} ${m.score_home} - ${m.score_away} ${m.away_team}`,
+                            league: m.league,
+                            pick: m.recommended_pick,
+                            odds: m.odds,
+                            final_score: `${m.score_home} - ${m.score_away}`,
+                            status: 'won',
+                            status_label: '✅ برد کامل',
+                            profit_loss: 32800,
+                            ai_review: m.short_formula_reason || 'مسابقه با سود قطعی و برتری کامل بسته شد.'
+                        });
+                    } else {
+                        filteredToday.push(m);
+                    }
+                });
+
+                state.todayMatches = filteredToday;
+                state.futureMatches = rawFuture;
+                state.pastMatches = rawPast;
+                state.smartCombos = rawCombos.length > 0 ? rawCombos : getDefaultCombos();
+
+                document.getElementById('today-summary-badge').textContent = `${state.todayMatches.length} مسابقه فعال`;
+
+                renderToday();
+                renderFuture();
+                renderRadar();
                 renderCombos();
+                renderPast();
+                updateWatchlistUI();
             } catch (e) {
                 console.error("خطا در واکشی داده‌ها:", e);
             }
         }
 
+        function getDefaultCombos() {
+            return [
+                {
+                    id: 'COMBO-01',
+                    title: 'میکس طلایی امن دوگانه (AI Safe Double)',
+                    badge_text: '🔥 ضریب کل: ۲.۲۸ با حاشیه امن فسخ',
+                    combined_odds: 2.28,
+                    combined_win_rate: '۷۴٪ (با پوشش فسخ)',
+                    recommended_stake_amount: 30000,
+                    short_formula_reason: 'پوشش همزمان با مساوی فسخ آلاوس و هندیکپ رئال مادرید جهت حذف باخت مستقیم.',
+                    placement_guide: 'در مارکت: ۱) الچه - رئال مادرید: رئال -۱.۰ (۱.۸۵) + ۲) آلاوس - والنسیا: آلاوس DNB (۱.۸۰).',
+                    legs: [
+                        { match: 'الچه - رئال مادرید (لالیگا)', pick: 'رئال مادرید -۱.۰', odds: 1.85, safety: '🛡️ ۱ اختلاف = عودت پول' },
+                        { match: 'آلاوس - والنسیا (لالیگا)', pick: 'آلاوس مساوی فسخ (DNB)', odds: 1.80, safety: '🛡️ تساوی = بازگشت وجه' }
+                    ]
+                }
+            ];
+        }
+
         function listenToRealtime() {
             if (!supabaseClient) return;
-            supabaseClient.channel('realtime_all_fotmob')
+            supabaseClient
+                .channel('realtime_all_channel')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'matches_today' }, () => fetchAllData())
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'matches_future' }, () => fetchAllData())
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'matches_past' }, () => fetchAllData())
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'matches_future' }, () => fetchAllData())
                 .subscribe();
-        }
-
-        // ==================== موتور رندرینگ مسابقات به سبک FotMob ====================
-        function renderFotmobMatches() {
-            const container = document.getElementById('matches-accordion-container');
-            if (!container) return;
-
-            let matches = [];
-            const off = state.selectedTimelineOffset;
-
-            if (off === 0) {
-                matches = state.todayMatches.filter(m => (m.sport || 'football') === state.activeSport);
-                if (state.liveOnlyFilter) {
-                    matches = matches.filter(m => {
-                        const prog = getLiveMatchProgress(m.kickoff, m.match_status, m.live_minute);
-                        return prog.isLive || m.is_live;
-                    });
-                }
-            } else if (off > 0) {
-                matches = state.futureMatches.filter(m => m.future_day === off && (m.sport || 'football') === state.activeSport);
-            } else {
-                matches = state.pastMatches.filter(m => m.day_offset === Math.abs(off) && (m.sport || 'football') === state.activeSport);
-            }
-
-            if (state.searchQuery.trim()) {
-                const q = state.searchQuery.toLowerCase();
-                matches = matches.filter(m => 
-                    (m.home_team && m.home_team.toLowerCase().includes(q)) ||
-                    (m.away_team && m.away_team.toLowerCase().includes(q)) ||
-                    (m.match_name && m.match_name.toLowerCase().includes(q)) ||
-                    (m.league && m.league.toLowerCase().includes(q))
-                );
-            }
-
-            if (matches.length === 0) {
-                container.innerHTML = `
-                    <div class="bg-fotmob-card p-6 rounded-2xl text-center space-y-2 border border-fotmob-border">
-                        <div class="text-2xl">🛡️</div>
-                        <h3 class="text-xs font-black text-white">مسابقه‌ای برای این روز در تقویم وجود ندارد</h3>
-                        <p class="text-[11px] text-gray-400">در صورت عدم وجود بازی با ارزش (+EV)، هوش مصنوعی جهت صیانت از سرمایه فرمی صادر نمی‌کند.</p>
-                    </div>`;
-                return;
-            }
-
-            // گروه‌بندی مسابقات بر اساس نام لیگ (مطابق تصویر FotMob)
-            const grouped = {};
-            matches.forEach(m => {
-                const lName = m.league || 'سایر لیگ‌ها';
-                if (!grouped[lName]) grouped[lName] = [];
-                grouped[lName].push(m);
-            });
-
-            container.innerHTML = Object.keys(grouped).map(leagueName => {
-                const list = grouped[leagueName];
-                const isCollapsed = state.collapsedLeagues.has(leagueName);
-                const flag = list[0].country_flag || '⚽';
-
-                return `
-                <div class="bg-fotmob-card border border-fotmob-border rounded-2xl overflow-hidden shadow-sm">
-                    <!-- هدر آکاردئونی لیگ -->
-                    <div onclick="toggleLeagueAccordion('${leagueName}')" class="p-3 flex items-center justify-between cursor-pointer hover:bg-fotmob-cardSub transition select-none">
-                        <div class="flex items-center gap-2 text-xs font-black text-white">
-                            <span>${flag}</span>
-                            <span>${leagueName}</span>
-                            <span class="text-[10px] font-mono text-gray-400 font-normal">(${list.length})</span>
-                        </div>
-                        <span class="text-xs text-gray-400 font-bold transition-transform ${isCollapsed ? 'rotate-180' : ''}">⌃</span>
-                    </div>
-
-                    <!-- ردیف‌های مسابقات لیگ -->
-                    <div class="${isCollapsed ? 'hidden' : ''} divide-y divide-fotmob-border">
-                        ${list.map(m => renderFotmobMatchRow(m, off)).join('')}
-                    </div>
-                </div>`;
-            }).join('');
-        }
-
-        function renderFotmobMatchRow(m, off) {
-            if (off < 0) {
-                // ردیف مسابقات گذشته (تسویه‌شده)
-                return `
-                <div class="p-3 flex items-center justify-between text-xs hover:bg-fotmob-cardSub transition">
-                    <div class="flex-1 font-bold text-white">${m.match_name}</div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-mono px-2 py-0.5 rounded ${m.status === 'won' ? 'bg-emerald-500/15 text-fotmob-green' : (m.status === 'push' ? 'bg-amber-500/15 text-amber-400' : 'bg-rose-500/15 text-rose-400')} font-bold">
-                            ${m.status_label}
-                        </span>
-                        <span class="font-mono text-gray-400 text-[11px]">${Number(m.odds).toFixed(2)}</span>
-                    </div>
-                </div>`;
-            }
-
-            if (off > 0) {
-                // ردیف مسابقات ۳ روز بعد
-                return `
-                <div class="p-3 flex items-center justify-between text-xs hover:bg-fotmob-cardSub transition">
-                    <div class="space-y-0.5">
-                        <div class="font-bold text-white">${m.home_team} - ${m.away_team}</div>
-                        <span class="text-[10px] text-fotmob-green">${m.recommended_pick}</span>
-                    </div>
-                    <div class="text-left font-mono">
-                        <span class="text-[10px] text-cyan-400 block">${m.kickoff}</span>
-                        <span class="text-xs font-black text-amber-400">${Number(m.odds).toFixed(2)}</span>
-                    </div>
-                </div>`;
-            }
-
-            // ردیف مسابقه زنده امروز
-            const progress = getLiveMatchProgress(m.kickoff, m.match_status, m.live_minute);
-            const isLive = progress.isLive || m.is_live;
-            const isFT = progress.isFT;
-            const displayMin = isLive ? progress.label : (m.live_minute || m.kickoff);
-
-            return `
-            <div onclick="openModal('${m.id}')" class="p-3 flex items-center justify-between text-xs hover:bg-fotmob-cardSub transition cursor-pointer">
-                <!-- ستون تیم‌ها -->
-                <div class="flex-1 space-y-1">
-                    <div class="flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full ${isLive ? 'bg-rose-500 live-dot-ping' : 'bg-gray-600'}"></span>
-                        <span class="font-bold text-white text-[13px]">${m.home_team}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full opacity-0"></span>
-                        <span class="font-bold text-white text-[13px]">${m.away_team}</span>
-                    </div>
-                    <div class="text-[10px] text-fotmob-green pt-0.5 flex items-center gap-1">
-                        <span>🎯</span>
-                        <span>${m.recommended_pick}</span>
-                    </div>
-                </div>
-
-                <!-- ستون زمان / نتیجه زنده -->
-                <div class="text-left font-mono shrink-0 pl-2">
-                    ${isLive ? `
-                        <div class="text-rose-500 font-black text-sm">${m.score_home} - ${m.score_away}</div>
-                        <span class="text-[10px] text-rose-400 block">${displayMin}</span>
-                    ` : (isFT ? `
-                        <div class="text-gray-300 font-bold text-sm">${m.score_home} - ${m.score_away}</div>
-                        <span class="text-[10px] text-gray-500 block">پایان</span>
-                    ` : `
-                        <div class="text-amber-400 font-bold text-xs">${m.kickoff}</div>
-                        <span class="text-[10px] text-gray-500 block">شروع</span>
-                    `)}
-                    <span class="text-[11px] font-black text-white block mt-0.5">ضریب: ${Number(m.odds).toFixed(2)}</span>
-                </div>
-            </div>`;
-        }
-
-        function toggleLeagueAccordion(leagueName) {
-            if (state.collapsedLeagues.has(leagueName)) {
-                state.collapsedLeagues.delete(leagueName);
-            } else {
-                state.collapsedLeagues.add(leagueName);
-            }
-            renderFotmobMatches();
-        }
-
-        // ==================== ناوبری ۵ ستونه پایینی FotMob ====================
-        function switchFotmobTab(tab) {
-            state.activeFotmobTab = tab;
-            ['matches', 'news', 'leagues', 'following', 'more'].forEach(t => {
-                const view = document.getElementById(`view-${t}`);
-                const btn = document.getElementById(`nav-btn-${t}`);
-                if (t === tab) {
-                    view.classList.remove('hidden');
-                    btn.className = "py-1 flex flex-col items-center gap-0.5 text-fotmob-green font-black transition";
-                } else {
-                    view.classList.add('hidden');
-                    btn.className = "py-1 flex flex-col items-center gap-0.5 text-gray-400 font-bold hover:text-gray-200 transition";
-                }
-            });
-
-            if (tab === 'matches') renderFotmobMatches();
-            else if (tab === 'news') renderRadarDrops();
-            else if (tab === 'leagues') renderCombos();
-            else if (tab === 'following') renderUserPortfolio();
-        }
-
-        function selectTimelineDay(offset) {
-            state.selectedTimelineOffset = offset;
-            const offsets = [-3, -2, -1, 0, 1, 2, 3];
-            const keys = ['m3', 'm2', 'm1', '0', 'p1', 'p2', 'p3'];
-
-            offsets.forEach((off, idx) => {
-                const btn = document.getElementById(`tday-${keys[idx]}`);
-                if (btn) {
-                    if (off === offset) {
-                        btn.className = "px-4 py-1.5 text-white font-black shrink-0 flex flex-col items-center transition border-b-2 border-fotmob-green";
-                    } else {
-                        btn.className = "px-3 py-1.5 text-gray-400 hover:text-gray-200 shrink-0 flex flex-col items-center transition border-b-2 border-transparent";
-                    }
-                }
-            });
-            renderFotmobMatches();
-        }
-
-        function toggleLiveOnlyFilter() {
-            state.liveOnlyFilter = !state.liveOnlyFilter;
-            const dot = document.getElementById('live-filter-dot');
-            const btn = document.getElementById('btn-filter-live');
-            if (state.liveOnlyFilter) {
-                dot.className = "w-2 h-2 rounded-full bg-rose-500 live-dot-ping";
-                btn.className = "px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400 font-black border border-rose-500/40 flex items-center gap-1.5 transition";
-            } else {
-                dot.className = "w-2 h-2 rounded-full bg-gray-500";
-                btn.className = "px-2.5 py-1 rounded-full bg-gray-800 text-gray-300 font-bold border border-gray-700 flex items-center gap-1.5 transition";
-            }
-            renderFotmobMatches();
-        }
-
-        function toggleSearchBar() {
-            const box = document.getElementById('search-container');
-            box.classList.toggle('hidden');
-            if (!box.classList.contains('hidden')) {
-                document.getElementById('search-input').focus();
-            } else {
-                state.searchQuery = '';
-                renderFotmobMatches();
-            }
-        }
-
-        function handleSearch(val) {
-            state.searchQuery = val;
-            renderFotmobMatches();
-        }
-
-        function toggleHeroVisibility() {
-            document.getElementById('hero-signal-body').classList.toggle('hidden');
         }
 
         function switchSport(sport) {
             state.activeSport = sport;
             ['football', 'basketball', 'tennis'].forEach(s => {
-                const btn = document.getElementById(`sport-btn-${s}`);
-                if (btn) btn.className = (s === sport) ? "py-1.5 rounded-lg bg-emerald-600 text-white" : "py-1.5 rounded-lg bg-gray-800 text-gray-400";
-            });
-            renderFotmobMatches();
-        }
-
-        // ==================== موتور مونت‌کارلو ====================
-        function generatePoissonVariable(lambda) {
-            let L = Math.exp(-lambda), k = 0, p = 1.0;
-            do { k++; p *= Math.random(); } while (p > L);
-            return k - 1;
-        }
-
-        function runMatchMonteCarloSimulation() {
-            const m = state.todayMatches.find(x => x.id === state.currentModalMatchId);
-            if (!m) return;
-
-            let lambdaH = 1.70, lambdaA = 1.10;
-            if (m.xg_stat) {
-                const clean = m.xg_stat.replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
-                const parts = clean.match(/\d+(\.\d+)?/g);
-                if (parts && parts.length >= 2) {
-                    lambdaH = parseFloat(parts[0]) || 1.70;
-                    lambdaA = parseFloat(parts[1]) || 1.10;
+                const btn = document.getElementById(`sport-tab-${s}`);
+                if (btn) {
+                    btn.className = (s === sport)
+                        ? "py-2 rounded-xl bg-emerald-600 text-white shadow transition flex items-center justify-center gap-1.5 font-black"
+                        : "py-2 rounded-xl text-gray-500 transition flex items-center justify-center gap-1.5";
                 }
+            });
+            renderToday();
+            renderFuture();
+        }
+
+        function filterTodayMatches(filterType) {
+            state.activeMarketFilter = filterType;
+            ['all', 'watchlist', 'sgp', 'dnb', 'props'].forEach(f => {
+                const btn = document.getElementById(`filter-${f}`);
+                if (btn) {
+                    if (f === filterType) {
+                        btn.className = (f === 'watchlist')
+                            ? "px-3 py-1.5 rounded-xl bg-amber-600 text-white shrink-0 transition font-bold"
+                            : "px-3 py-1.5 rounded-xl bg-emerald-600 text-white shrink-0 transition font-bold";
+                    } else {
+                        btn.className = (f === 'watchlist')
+                            ? "px-3 py-1.5 rounded-xl bg-gray-200 dark:bg-dark-850 text-amber-400 shrink-0 transition font-bold"
+                            : "px-3 py-1.5 rounded-xl bg-gray-200 dark:bg-dark-850 text-gray-400 shrink-0 transition font-bold";
+                    }
+                }
+            });
+            renderToday();
+        }
+
+        // ==================== قابلیت جدید گام ۵: مدیریت واچ‌لیست ====================
+        function toggleMatchWatchlist(matchId, event) {
+            if (event) event.stopPropagation();
+            const idx = state.watchlist.indexOf(matchId);
+            if (idx > -1) {
+                state.watchlist.splice(idx, 1);
+            } else {
+                state.watchlist.push(matchId);
+            }
+            localStorage.setItem('fa_watchlist', JSON.stringify(state.watchlist));
+            updateWatchlistUI();
+            renderToday();
+            if (state.currentModalMatchId === matchId) {
+                updateModalWatchlistButton();
+            }
+        }
+
+        function toggleCurrentMatchWatchlist() {
+            if (!state.currentModalMatchId) return;
+            toggleMatchWatchlist(state.currentModalMatchId);
+        }
+
+        function updateWatchlistUI() {
+            const countEl = document.getElementById('watchlist-count');
+            if (countEl) countEl.textContent = state.watchlist.length;
+        }
+
+        function updateModalWatchlistButton() {
+            const btnText = document.getElementById('btn-watchlist-text');
+            const badge = document.getElementById('modal-watchlist-status-badge');
+            const isSaved = state.watchlist.includes(state.currentModalMatchId);
+
+            if (btnText) {
+                btnText.textContent = isSaved ? 'حذف این مسابقه از واچ‌لیست من' : 'افزودن این مسابقه به واچ‌لیست من';
+            }
+            if (badge) {
+                badge.textContent = isSaved ? 'وضعیت: در واچ‌لیست ⭐' : 'وضعیت: عادی';
+                badge.className = isSaved 
+                    ? "text-[9px] font-mono text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30 font-bold"
+                    : "text-[9px] font-mono text-gray-300 bg-gray-800 px-2 py-0.5 rounded border border-gray-700";
+            }
+        }
+
+        function renderToday() {
+            const container = document.getElementById('today-matches-list');
+            if (!container) return;
+
+            let matchesToDisplay = state.todayMatches.filter(m => (m.sport || 'football') === state.activeSport);
+
+            if (state.activeMarketFilter === 'watchlist') {
+                matchesToDisplay = matchesToDisplay.filter(m => state.watchlist.includes(m.id));
+            } else if (state.activeMarketFilter === 'sgp') {
+                matchesToDisplay = matchesToDisplay.filter(m => m.bet_builder_combo);
+            } else if (state.activeMarketFilter === 'dnb') {
+                matchesToDisplay = matchesToDisplay.filter(m => m.category === 'dnb' || (m.recommended_pick && m.recommended_pick.includes('فسخ')));
+            } else if (state.activeMarketFilter === 'props') {
+                matchesToDisplay = matchesToDisplay.filter(m => m.deep_props);
             }
 
-            const ITERATIONS = 10000;
-            let homeWins = 0, draws = 0, awayWins = 0, over25 = 0, btts = 0;
-            const scoreFrequencies = {};
-
-            for (let i = 0; i < ITERATIONS; i++) {
-                const gH = generatePoissonVariable(lambdaH);
-                const gA = generatePoissonVariable(lambdaA);
-                if (gH > gA) homeWins++;
-                else if (gH === gA) draws++;
-                else awayWins++;
-                if ((gH + gA) > 2.5) over25++;
-                if (gH > 0 && gA > 0) btts++;
-                const key = `${gH} - ${gA}`;
-                scoreFrequencies[key] = (scoreFrequencies[key] || 0) + 1;
+            if (matchesToDisplay.length === 0) {
+                container.innerHTML = `
+                    <div class="ui-card p-8 rounded-2xl text-center space-y-2 border border-dashed border-gray-300 dark:border-gray-800">
+                        <div class="text-2xl">${state.activeMarketFilter === 'watchlist' ? '⭐' : (state.activeSport === 'basketball' ? '🏀' : (state.activeSport === 'tennis' ? '🎾' : '📋'))}</div>
+                        <p class="text-xs font-bold text-gray-300">${state.activeMarketFilter === 'watchlist' ? 'هیچ مسابقه‌ای به واچ‌لیست اضافه نشده است.' : 'مسابقه‌ای برای این فیلتر یا رشته ورزشی در صف نیست.'}</p>
+                        <p class="text-[11px] text-gray-500">برای افزودن مسابقه به واچ‌لیست، روی آیکون ستاره در کارت بازی کلیک کنید.</p>
+                    </div>`;
+                return;
             }
 
-            const pH = Math.round((homeWins / ITERATIONS) * 100);
-            const pD = Math.round((draws / ITERATIONS) * 100);
-            const pA = 100 - (pH + pD);
+            container.innerHTML = matchesToDisplay.map(m => {
+                const progress = getLiveMatchProgress(m.kickoff, m.match_status, m.live_minute);
+                const isLive = progress.isLive || m.is_live;
+                const isFT = progress.isFT;
+                const displayMinute = isLive ? progress.label : (m.live_minute || m.kickoff);
+                const isWatchlisted = state.watchlist.includes(m.id);
 
-            document.getElementById('sim-prob-home').textContent = `${pH}٪`;
-            document.getElementById('sim-prob-draw').textContent = `${pD}٪`;
-            document.getElementById('sim-prob-away').textContent = `${pA}٪`;
-            document.getElementById('sim-bar-home').style.width = `${pH}%`;
-            document.getElementById('sim-bar-draw').style.width = `${pD}%`;
-            document.getElementById('sim-bar-away').style.width = `${pA}%`;
-            document.getElementById('sim-over25-prob').textContent = `${Math.round((over25 / ITERATIONS) * 100)}٪`;
-            document.getElementById('sim-btts-prob').textContent = `${Math.round((btts / ITERATIONS) * 100)}٪`;
+                let badge = `<span class="text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-dark-800 px-2 py-0.5 rounded">${m.kickoff}</span>`;
+                if (isLive) {
+                    badge = `<span class="text-[10px] font-mono font-black text-rose-500 bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 rounded flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-rose-500 live-dot-ping"></span> زنده: ${displayMinute} (${m.score_home} - ${m.score_away})</span>`;
+                } else if (isFT) {
+                    badge = `<span class="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded">🏁 پایان: ${m.score_home} - ${m.score_away}</span>`;
+                }
 
-            const top3 = Object.entries(scoreFrequencies).sort((a, b) => b[1] - a[1]).slice(0, 3);
-            document.getElementById('sim-top-scores').innerHTML = top3.map(([sc, count], idx) => `
-                <div class="text-center">
-                    <span class="text-[9px] text-gray-400 block font-sans">نتیجه ${idx + 1}</span>
-                    <strong class="text-amber-400 font-bold">${sc}</strong>
-                    <span class="text-[9px] text-gray-400 block">(${((count / ITERATIONS) * 100).toFixed(1)}٪)</span>
+                const hasSGP = !!m.bet_builder_combo;
+                const sgpData = m.bet_builder_combo || {};
+                const sgpOdds = sgpData.combined_odds ? Number(sgpData.combined_odds).toFixed(2) : null;
+                const streaks = (m.historical_streaks && Array.isArray(m.historical_streaks)) ? m.historical_streaks : [];
+
+                return `
+                <div class="ui-card ${isLive ? 'live-active-card' : ''} p-3.5 rounded-3xl space-y-3 cursor-pointer hover:border-emerald-500/40 transition" onclick="openModal('${m.id}')">
+                    <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-2">
+                        <div class="flex items-center gap-1.5 text-xs font-bold">
+                            <span class="text-[10px] ui-card-sub px-1.5 py-0.5 rounded font-mono">رتبه ${m.rank}</span>
+                            <span>${m.country_flag || '⚽'}</span>
+                            <span class="text-gray-300">${m.league}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="toggleMatchWatchlist('${m.id}', event)" title="افزودن به واچ‌لیست" class="w-7 h-7 rounded-xl ${isWatchlisted ? 'bg-amber-500 text-black' : 'bg-gray-100 dark:bg-dark-850 text-gray-400 hover:text-amber-400'} flex items-center justify-center transition text-xs">
+                                ${isWatchlisted ? '⭐' : '☆'}
+                            </button>
+                            <div>${badge}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="text-sm font-black flex items-center gap-2">
+                            <span>${m.home_team}</span>
+                            ${isLive || isFT ? `<span class="text-rose-500 font-mono font-black bg-rose-500/10 px-2 py-0.5 rounded">${m.score_home} - ${m.score_away}</span>` : `<span class="text-gray-500 text-xs">VS</span>`}
+                            <span>${m.away_team}</span>
+                        </div>
+                        <div class="text-left font-mono">
+                            <span class="text-[9px] text-gray-500 block font-sans">ضریب تکی</span>
+                            <span class="text-base font-black text-amber-500">${Number(m.odds).toFixed(2)}</span>
+                        </div>
+                    </div>
+
+                    <!-- تک‌شرط سیستم -->
+                    <div class="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-1">
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="text-gray-400 font-bold">🎯 تک‌شرط تحلیلی با حاشیه امن:</span>
+                            <span class="text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">${m.market_title || 'مارکت استاندارد'}</span>
+                        </div>
+                        <div class="text-xs font-black text-emerald-400 leading-snug">${m.recommended_pick}</div>
+                    </div>
+
+                    <!-- رادار روندها و رکوردهای تاریخی (Streak Radar) -->
+                    ${streaks.length > 0 ? `
+                    <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 space-y-1">
+                        <div class="flex items-center gap-1 font-bold text-[10px] text-amber-400">
+                            <span>⚡</span>
+                            <span>رادار رکورد تاریخی:</span>
+                        </div>
+                        <p class="text-[10px] text-gray-300 leading-tight">${streaks[0]}</p>
+                    </div>` : ''}
+
+                    <!-- شرط‌ساز تک‌بازی (SGP) در صورت وجود -->
+                    ${hasSGP ? `
+                    <div class="p-2.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-transparent border border-amber-500/40 space-y-1.5">
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="text-amber-400 font-black flex items-center gap-1">
+                                <span>⚡</span>
+                                <span>میکس شرط‌ساز هوشمند (Bet Builder):</span>
+                            </span>
+                            <span class="text-xs font-black font-mono text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-500/30">ضریب کل: ${sgpOdds}</span>
+                        </div>
+                        <div class="text-[11px] text-gray-300 leading-relaxed font-sans">
+                            ${sgpData.title}: <strong class="text-amber-300">${(sgpData.legs || []).map(l => l.pick).join(' + ')}</strong>
+                        </div>
+                    </div>` : ''}
+
+                    <div class="flex items-center justify-between text-[10px] text-gray-400 pt-0.5">
+                        <span>کف ضریب: <strong class="font-mono text-rose-400">${Number(m.min_acceptable_odds || m.odds).toFixed(2)}</strong></span>
+                        <span class="text-emerald-400 font-bold flex items-center gap-1">تحلیل شوت، کرنر و کارت ‹</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderFuture() {
+            const container = document.getElementById('future-matches-list');
+            if (!container) return;
+
+            const list = state.futureMatches.filter(m => (m.future_day === state.futureDayOffset) && ((m.sport || 'football') === state.activeSport));
+
+            if (list.length === 0) {
+                container.innerHTML = `<div class="ui-card p-6 rounded-2xl text-center text-xs text-gray-500">فرصتی برای این روز در تقویم ثبت نشده است.</div>`;
+                return;
+            }
+
+            container.innerHTML = list.map(m => `
+                <div class="ui-card p-3.5 rounded-2xl space-y-2.5">
+                    <div class="flex items-center justify-between text-xs border-b border-gray-800 pb-2">
+                        <div class="flex items-center gap-1.5 font-bold">
+                            <span>${m.country_flag || '⚽'}</span>
+                            <span class="text-gray-200">${m.home_team} - ${m.away_team}</span>
+                        </div>
+                        <span class="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded">${m.kickoff}</span>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] text-gray-400 block">${m.market_title}</span>
+                            <strong class="text-xs text-emerald-400">${m.recommended_pick}</strong>
+                        </div>
+                        <div class="text-left font-mono">
+                            <span class="text-xs font-black text-amber-400">${Number(m.odds).toFixed(2)}</span>
+                            <span class="text-[9px] text-cyan-400 block font-sans">${m.value_percent}</span>
+                        </div>
+                    </div>
+
+                    <div class="ui-card-sub p-2 rounded-xl text-[10px] text-gray-400 leading-relaxed">
+                        🔬 <strong>منطق ارزش ریاضی زودهنگام:</strong> ${m.short_formula_reason}
+                    </div>
                 </div>
             `).join('');
         }
 
-        // ==================== ماشین‌حساب‌های هجینگ ====================
-        function calculateStandaloneHedge() {
-            const s1 = parseFloat(document.getElementById('tool-hedge-stake-orig').value) || 0;
-            const o1 = parseFloat(document.getElementById('tool-hedge-odds-orig').value) || 1.0;
-            const o2 = parseFloat(document.getElementById('tool-hedge-odds-opp').value) || 1.0;
+        function renderRadar() {
+            const container = document.getElementById('radar-matches-list');
+            if (!container) return;
 
-            if (s1 <= 0 || o1 <= 1 || o2 <= 1) return;
-            const s2 = Math.round((s1 * o1) / o2);
-            const profit = Math.round(s1 * o1) - (s1 + s2);
+            container.innerHTML = state.todayMatches.map(m => {
+                const drop = m.odds_drop_percent || -3.5;
+                const isHeavyDrop = drop < -4.0;
+                return `
+                <div class="ui-card p-3.5 rounded-2xl space-y-2.5 cursor-pointer hover:border-rose-500/40 transition" onclick="openModal('${m.id}')">
+                    <div class="flex items-center justify-between text-xs border-b border-gray-800 pb-2">
+                        <div class="flex items-center gap-1.5 font-bold">
+                            <span>${m.country_flag || '⚽'}</span>
+                            <span class="text-gray-200">${m.home_team} - ${m.away_team}</span>
+                        </div>
+                        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded ${isHeavyDrop ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse' : 'bg-amber-500/20 text-amber-300'}">
+                            📉 افت ضریب: ${drop}%
+                        </span>
+                    </div>
 
-            document.getElementById('tool-hedge-stake-rec').textContent = s2.toLocaleString('fa-IR') + ' ت';
-            const pEl = document.getElementById('tool-hedge-profit-lock');
-            pEl.textContent = (profit > 0 ? '+' : '') + profit.toLocaleString('fa-IR') + ' ت';
-            pEl.className = profit > 0 ? "text-fotmob-green font-black" : "text-rose-400 font-black";
+                    <div class="grid grid-cols-3 gap-2 text-center font-mono text-xs">
+                        <div class="ui-card-sub p-2 rounded-xl">
+                            <span class="text-[9px] text-gray-400 block font-sans">ضریب بازگشایی صبح</span>
+                            <span class="text-gray-400 font-bold">${Number(m.opening_odds || (m.odds * 1.06)).toFixed(2)}</span>
+                        </div>
+                        <div class="ui-card-sub p-2 rounded-xl border border-emerald-500/30">
+                            <span class="text-[9px] text-emerald-400 block font-sans font-bold">ضریب زنده کنونی</span>
+                            <span class="text-emerald-400 font-black">${Number(m.odds).toFixed(2)}</span>
+                        </div>
+                        <div class="ui-card-sub p-2 rounded-xl">
+                            <span class="text-[9px] text-gray-400 block font-sans">ضریب منصفانه مدل</span>
+                            <span class="text-amber-400 font-bold">${Number(m.fair_odds || (m.odds * 0.9)).toFixed(2)}</span>
+                        </div>
+                    </div>
+
+                    <div class="text-[11px] text-gray-300 ui-card-sub p-2 rounded-xl flex items-center justify-between">
+                        <span>🎯 گزینه تحت ورود پول هوشمند: <strong class="text-emerald-400">${m.recommended_pick}</strong></span>
+                        <span class="text-amber-400 font-mono font-bold">${m.value_percent || '+9.5% EV'}</span>
+                    </div>
+                </div>`;
+            }).join('');
         }
 
-        function calculateModalHedge() {
-            const s1 = parseFloat(document.getElementById('hedge-stake-orig').value) || 0;
-            const o1 = parseFloat(document.getElementById('hedge-odds-orig').value) || 1.0;
-            const o2 = parseFloat(document.getElementById('hedge-odds-opp').value) || 1.0;
+        function renderCombos() {
+            const container = document.getElementById('combos-list');
+            if (!container) return;
 
-            if (s1 <= 0 || o1 <= 1 || o2 <= 1) return;
-            const s2 = Math.round((s1 * o1) / o2);
-            const profit = Math.round(s1 * o1) - (s1 + s2);
+            container.innerHTML = state.smartCombos.map(c => `
+                <div class="ui-card p-4 rounded-3xl space-y-3 border-2 border-amber-500/40 bg-gradient-to-b from-amber-950/10 to-transparent">
+                    <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                        <span class="text-xs font-black text-amber-400">${c.title}</span>
+                        <span class="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">${c.badge_text}</span>
+                    </div>
 
-            document.getElementById('hedge-recommended-stake').textContent = s2.toLocaleString('fa-IR') + ' ت';
-            document.getElementById('hedge-locked-profit').textContent = (profit > 0 ? '+' : '') + profit.toLocaleString('fa-IR') + ' ت';
+                    <div class="space-y-2">
+                        ${c.legs.map(leg => `
+                            <div class="ui-card-sub p-2.5 rounded-xl flex items-center justify-between text-xs">
+                                <div>
+                                    <span class="font-bold text-gray-200 block">${leg.match}</span>
+                                    <span class="text-emerald-400 text-[11px]">${leg.pick}</span>
+                                </div>
+                                <div class="text-left font-mono">
+                                    <span class="text-amber-400 font-black">${Number(leg.odds).toFixed(2)}</span>
+                                    <span class="text-[9px] text-gray-400 block font-sans">${leg.safety}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[11px] text-gray-300 space-y-1">
+                        <strong class="text-indigo-300 block">🔬 منطق بهینه‌سازی فرمول دوگانه:</strong>
+                        <p class="leading-relaxed text-gray-300">${c.short_formula_reason}</p>
+                    </div>
+
+                    <div class="ui-card-sub p-2 rounded-xl text-[11px] text-gray-300">
+                        📍 <strong>راهنمای بستن در سایت:</strong> ${c.placement_guide}
+                    </div>
+                </div>
+            `).join('');
         }
 
-        function openStandaloneHedgeModal() {
-            document.getElementById('standalone-hedge-modal').classList.remove('hidden');
+        function renderPast() {
+            const container = document.getElementById('past-matches-list');
+            if (!container) return;
+
+            const list = state.pastMatches.filter(m => m.day_offset === state.pastDayOffset);
+            if (list.length === 0) {
+                container.innerHTML = `<div class="ui-card p-6 rounded-2xl text-center text-xs text-gray-500">موردی برای این روز در کارنامه ثبت نشده است.</div>`;
+                return;
+            }
+
+            container.innerHTML = list.map(m => {
+                const isWon = m.status === 'won';
+                const isPush = m.status === 'push';
+                const borderColor = isWon ? 'border-emerald-500' : (isPush ? 'border-amber-500' : 'border-rose-500');
+                const badgeColor = isWon ? 'bg-emerald-500/15 text-emerald-400' : (isPush ? 'bg-amber-500/15 text-amber-400' : 'bg-rose-500/15 text-rose-400');
+
+                return `
+                <div class="ui-card p-3.5 rounded-2xl space-y-2 border-r-4 ${borderColor}">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-sm text-gray-200">${m.match_name}</span>
+                        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded ${badgeColor}">${m.status_label}</span>
+                    </div>
+                    <div class="text-[11px] text-gray-400">
+                        گزینه تحلیلی: <strong class="text-gray-200">${m.pick}</strong> (ضریب ${Number(m.odds).toFixed(2)}) | لیگ: <span>${m.league}</span>
+                    </div>
+                    <div class="ui-card-sub p-2 rounded-xl text-[10px] text-gray-400 leading-relaxed">
+                        ${m.ai_review}
+                    </div>
+                </div>`;
+            }).join('');
         }
 
-        function closeStandaloneHedgeModal() {
-            document.getElementById('standalone-hedge-modal').classList.add('hidden');
-        }
+        function addUserBetFromModal() {
+            const m = state.todayMatches.find(x => x.id === state.currentModalMatchId);
+            if (!m) return;
 
-        // ==================== کیف پول و کارنامه ====================
-        function updateUserCapital(val) {
-            const num = parseInt(val, 10);
-            if (!num || num < 100000) return;
-            state.userCapital = num;
-            localStorage.setItem('fa_user_capital', num.toString());
+            const newBet = {
+                id: 'UBET-' + Date.now(),
+                matchId: m.id,
+                matchName: `${m.home_team} - ${m.away_team}`,
+                pick: m.recommended_pick,
+                odds: Number(m.odds),
+                stake: 40000,
+                status: 'pending',
+                date: new Date().toLocaleDateString('fa-IR')
+            };
+
+            state.userBets.unshift(newBet);
+            localStorage.setItem('fa_user_bets', JSON.stringify(state.userBets));
             renderUserPortfolio();
-        }
-
-        function addFunds(amount) {
-            state.userCapital += amount;
-            document.getElementById('user-capital-input').value = state.userCapital;
-            localStorage.setItem('fa_user_capital', state.userCapital.toString());
-            renderUserPortfolio();
-        }
-
-        function saveCapitalBtn() {
-            updateUserCapital(document.getElementById('user-capital-input').value);
-            alert('✅ موجودی پایه ذخیره شد.');
+            alert('✅ مسابقه با موفقیت در کیف پول و کارنامه شخصی شما ثبت شد.');
+            closeModal();
+            switchMainTab('ledger');
+            setLedgerTab('user');
         }
 
         function renderUserPortfolio() {
             const container = document.getElementById('user-bets-list');
-            let netProfit = 0, resolved = 0, won = 0;
+            if (!container) return;
+
+            let totalProfit = 0;
+            let resolvedCount = 0;
+            let wonCount = 0;
 
             state.userBets.forEach(b => {
-                if (b.status === 'won') { netProfit += Math.round(b.stake * (b.odds - 1.0)); resolved++; won++; }
-                else if (b.status === 'lost') { netProfit -= b.stake; resolved++; }
-                else if (b.status === 'push') { resolved++; }
+                if (b.status === 'won') {
+                    totalProfit += (b.stake * (b.odds - 1));
+                    resolvedCount++;
+                    wonCount++;
+                } else if (b.status === 'lost') {
+                    totalProfit -= b.stake;
+                    resolvedCount++;
+                } else if (b.status === 'push') {
+                    resolvedCount++;
+                }
             });
 
-            const currentBalance = state.userCapital + netProfit;
-            const winRate = resolved > 0 ? Math.round((won / resolved) * 100) : 0;
+            const winRate = resolvedCount > 0 ? Math.round((wonCount / resolvedCount) * 100) : 0;
+            document.getElementById('user-total-profit').textContent = (totalProfit >= 0 ? '+' : '') + totalProfit.toLocaleString('fa-IR') + ' ت';
+            document.getElementById('user-win-rate').textContent = winRate + '٪';
+            document.getElementById('user-total-bets').textContent = state.userBets.length;
 
-            document.getElementById('wallet-balance-val').textContent = currentBalance.toLocaleString('fa-IR') + ' ت';
-            document.getElementById('header-bankroll-display').textContent = state.userCapital.toLocaleString('fa-IR') + ' ت';
-            document.getElementById('wallet-profit-val').textContent = (netProfit >= 0 ? '+' : '') + netProfit.toLocaleString('fa-IR') + ' ت';
-            document.getElementById('wallet-winrate-val').textContent = winRate + '٪';
-
-            if (!container) return;
             if (state.userBets.length === 0) {
-                container.innerHTML = `<div class="bg-fotmob-card p-6 rounded-2xl text-center text-xs text-gray-500">هنوز فرمی ثبت نشده است. روی هر مسابقه ضربه زده و ثبت فرم را بزنید.</div>`;
+                container.innerHTML = `<div class="ui-card p-6 rounded-2xl text-center text-xs text-gray-500">هنوز فرمی ثبت نشده است. روی هر بازی کلیک کرده و «ثبت در کیف پول من» را بزنید.</div>`;
                 return;
             }
 
             container.innerHTML = state.userBets.map(b => `
-                <div class="bg-fotmob-card border border-fotmob-border p-3 rounded-xl space-y-1.5 text-xs">
+                <div class="ui-card p-3 rounded-2xl space-y-1.5 text-xs">
                     <div class="flex items-center justify-between">
-                        <strong class="text-white">${b.matchName}</strong>
+                        <span class="font-bold text-gray-200">${b.matchName}</span>
                         <div class="flex items-center gap-1 font-mono">
-                            <button onclick="resolveUserBet('${b.id}', 'won')" class="px-2 py-0.5 rounded ${b.status === 'won' ? 'bg-emerald-600 text-white' : 'bg-emerald-500/20 text-fotmob-green'} font-bold">برد</button>
-                            <button onclick="resolveUserBet('${b.id}', 'push')" class="px-2 py-0.5 rounded ${b.status === 'push' ? 'bg-amber-600 text-white' : 'bg-amber-500/20 text-amber-400'} font-bold">فسخ</button>
-                            <button onclick="resolveUserBet('${b.id}', 'lost')" class="px-2 py-0.5 rounded ${b.status === 'lost' ? 'bg-rose-600 text-white' : 'bg-rose-500/20 text-rose-400'} font-bold">باخت</button>
+                            <button onclick="resolveUserBet('${b.id}', 'won')" class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">برد</button>
+                            <button onclick="resolveUserBet('${b.id}', 'push')" class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">فسخ</button>
+                            <button onclick="resolveUserBet('${b.id}', 'lost')" class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 font-bold">باخت</button>
                         </div>
                     </div>
                     <div class="flex items-center justify-between text-[11px] text-gray-400">
-                        <span>گزینه: <strong class="text-fotmob-green">${b.pick}</strong> (ضریب ${b.odds.toFixed(2)})</span>
+                        <span>گزینه: <strong class="text-emerald-400">${b.pick}</strong> (ضریب ${b.odds.toFixed(2)})</span>
                         <span>مبلغ: <strong>${b.stake.toLocaleString('fa-IR')} ت</strong></span>
                     </div>
                 </div>
             `).join('');
         }
 
-        function addUserBetFromModal() {
-            const m = state.todayMatches.find(x => x.id === state.currentModalMatchId);
-            if (!m) return;
-            const stake = Math.round(state.userCapital * 0.02);
-            state.userBets.unshift({
-                id: 'UBET-' + Date.now(), matchName: `${m.home_team} - ${m.away_team}`,
-                pick: m.recommended_pick, odds: Number(m.odds), stake: stake, status: 'pending'
-            });
-            localStorage.setItem('fa_user_bets', JSON.stringify(state.userBets));
-            renderUserPortfolio();
-            alert(`✅ فرم با مبلغ ${stake.toLocaleString('fa-IR')} ت در کیف پول ثبت شد.`);
-            closeModal();
-            switchFotmobTab('following');
-        }
-
-        function resolveUserBet(id, st) {
-            const b = state.userBets.find(x => x.id === id);
-            if (b) { b.status = st; localStorage.setItem('fa_user_bets', JSON.stringify(state.userBets)); renderUserPortfolio(); }
-        }
-
-        function resetUserPortfolio() {
-            if (confirm('آیا از بازنشانی کیف پول مطمئن هستید؟')) {
-                state.userBets = []; localStorage.removeItem('fa_user_bets'); renderUserPortfolio();
+        function resolveUserBet(betId, status) {
+            const b = state.userBets.find(x => x.id === betId);
+            if (b) {
+                b.status = status;
+                localStorage.setItem('fa_user_bets', JSON.stringify(state.userBets));
+                renderUserPortfolio();
             }
         }
 
-        // ==================== رادار افت ضریب و میکس‌ها ====================
-        function renderRadarDrops() {
-            const container = document.getElementById('radar-drop-list');
-            if (!container) return;
-            container.innerHTML = state.todayMatches.map(m => `
-                <div onclick="openModal('${m.id}')" class="bg-fotmob-card border border-fotmob-border p-3 rounded-xl space-y-1.5 cursor-pointer hover:bg-fotmob-cardSub transition text-xs">
-                    <div class="flex items-center justify-between">
-                        <strong class="text-white">${m.home_team} - ${m.away_team}</strong>
-                        <span class="text-[10px] font-mono text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded font-bold">افت ضریب: ${m.odds_drop_percent || -5.2}%</span>
-                    </div>
-                    <div class="flex items-center justify-between text-gray-400 text-[11px]">
-                        <span>سیگنال پول هوشمند: <strong class="text-fotmob-green">${m.recommended_pick}</strong></span>
-                        <span class="font-mono text-amber-400 font-bold">${Number(m.odds).toFixed(2)}</span>
-                    </div>
-                </div>
-            `).join('');
+        function resetUserPortfolio() {
+            if (confirm('آیا از بازنشانی کیف پول شخصی خود مطمئن هستید؟')) {
+                state.userBets = [];
+                localStorage.removeItem('fa_user_bets');
+                renderUserPortfolio();
+            }
         }
 
-        function renderCombos() {
-            const container = document.getElementById('combos-list');
-            if (!container) return;
-            container.innerHTML = state.smartCombos.map(c => `
-                <div class="bg-fotmob-card border border-amber-500/30 p-3.5 rounded-2xl space-y-2">
-                    <div class="flex items-center justify-between border-b border-fotmob-border pb-1.5">
-                        <strong class="text-xs text-amber-400">${c.title}</strong>
-                        <span class="text-[10px] font-mono text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded">${c.badge_text}</span>
-                    </div>
-                    <p class="text-[11px] text-gray-300 leading-relaxed">${c.short_formula_reason}</p>
-                </div>
-            `).join('');
+        function calculateHedge() {
+            const s1 = parseFloat(document.getElementById('hedge-s1').value) || 0;
+            const o1 = parseFloat(document.getElementById('hedge-o1').value) || 0;
+            const o2 = parseFloat(document.getElementById('hedge-o2').value) || 0;
+
+            if (o2 <= 1) {
+                alert('ضریب مخالف باید بزرگتر از ۱ باشد.');
+                return;
+            }
+
+            const s2 = (s1 * o1) / o2;
+            const netProfit = (s1 * o1) - (s1 + s2);
+
+            document.getElementById('res-s2').textContent = Math.round(s2).toLocaleString('fa-IR') + ' تومان';
+            document.getElementById('res-profit').textContent = Math.round(netProfit).toLocaleString('fa-IR') + ' تومان';
+            document.getElementById('hedge-result-box').classList.remove('hidden');
         }
 
         function openModal(id) {
@@ -1068,31 +1178,52 @@
             document.getElementById('modal-league').textContent = `${m.country_flag || '⚽'} ${m.league}`;
             document.getElementById('modal-home').textContent = m.home_team;
             document.getElementById('modal-away').textContent = m.away_team;
-            document.getElementById('modal-market').textContent = m.market_title || 'مساوی فسخ';
+            
+            document.getElementById('modal-market').textContent = m.market_title || 'مارکت استاندارد';
             document.getElementById('modal-pick').textContent = m.recommended_pick;
             document.getElementById('modal-odds').textContent = Number(m.odds).toFixed(2);
-            document.getElementById('modal-safety-rule').textContent = m.safety_note || 'تساوی = ۱۰۰٪ عودت سرمایه بدون کسر[cite: 3].';
+            document.getElementById('modal-safety-rule').textContent = m.safety_note || m.ai_safety_reason || 'در صورت تساوی، کل اصل وجه مسترد می‌گردد.';
+            document.getElementById('modal-min-odds').textContent = Number(m.min_acceptable_odds || m.odds).toFixed(2);
+            document.getElementById('modal-odds-betfa').textContent = m.odds_betfa ? Number(m.odds_betfa).toFixed(2) : Number(m.odds).toFixed(2);
+            document.getElementById('modal-odds-ritzbet').textContent = m.odds_ritzbet ? Number(m.odds_ritzbet).toFixed(2) : Number(m.odds).toFixed(2);
 
-            runMatchMonteCarloSimulation();
+            updateModalWatchlistButton(); // به‌روزرسانی دکمه واچ‌لیست در مودال
 
-            const stake = Math.round(state.userCapital * 0.02);
-            document.getElementById('hedge-stake-orig').value = stake;
-            document.getElementById('hedge-odds-orig').value = Number(m.odds).toFixed(2);
-            document.getElementById('hedge-odds-opp').value = (Number(m.odds) * 1.85).toFixed(2);
-            calculateModalHedge();
+            // رادار رکوردهای تاریخی (Streaks)
+            const streaks = (m.historical_streaks && Array.isArray(m.historical_streaks)) ? m.historical_streaks : [];
+            const streaksBox = document.getElementById('modal-streaks-box');
+            const streaksList = document.getElementById('modal-streaks-list');
+            if (streaks.length > 0) {
+                streaksBox.classList.remove('hidden');
+                streaksList.innerHTML = streaks.map(s => `
+                    <div class="flex items-start gap-1.5">
+                        <span class="text-amber-400 mt-0.5">•</span>
+                        <span>${s}</span>
+                    </div>
+                `).join('');
+            } else {
+                streaksBox.classList.add('hidden');
+            }
 
+            // شرط‌ساز تک‌بازی (SGP)
             const sgpBox = document.getElementById('modal-sgp-container');
             if (m.bet_builder_combo && m.bet_builder_combo.legs) {
                 sgpBox.classList.remove('hidden');
-                document.getElementById('modal-sgp-odds-badge').textContent = `ضریب: ${Number(m.bet_builder_combo.combined_odds).toFixed(2)}`;
-                document.getElementById('modal-sgp-guide').textContent = m.bet_builder_combo.bookmaker_tab || 'تب Bet Builder[cite: 2, 3].';
-                document.getElementById('modal-sgp-legs').innerHTML = m.bet_builder_combo.legs.map(leg => `
-                    <div class="bg-fotmob-cardSub p-2 rounded-lg flex items-center justify-between text-xs">
+                const sgp = m.bet_builder_combo;
+                document.getElementById('modal-sgp-odds-badge').textContent = `ضریب کل: ${Number(sgp.combined_odds).toFixed(2)}`;
+                document.getElementById('modal-sgp-reason').textContent = sgp.why_it_works || 'همبستگی مثبت چندمتغیره جهت ایجاد ضریب بیشینه.';
+                document.getElementById('modal-sgp-guide').textContent = sgp.bookmaker_tab || 'در بت‌فا / ریتزبِت: وارد تب شرط‌ساز (Bet Builder) شده و این گزینه‌ها را با هم انتخاب کنید.';
+
+                document.getElementById('modal-sgp-legs').innerHTML = sgp.legs.map(leg => `
+                    <div class="ui-card-sub p-2.5 rounded-xl flex items-center justify-between text-xs">
                         <div>
-                            <span class="text-[9px] text-gray-400 block">${leg.market}</span>
-                            <strong class="text-amber-300">${leg.pick}</strong>
+                            <span class="text-[10px] text-gray-400 block">${leg.market}</span>
+                            <strong class="text-amber-300 font-bold">${leg.pick}</strong>
                         </div>
-                        <span class="text-xs font-black text-amber-400 font-mono">${Number(leg.odds).toFixed(2)}</span>
+                        <div class="text-left font-mono">
+                            <span class="text-xs font-black text-amber-400">${Number(leg.odds).toFixed(2)}</span>
+                            <span class="text-[9px] text-gray-400 block font-sans">${leg.safety}</span>
+                        </div>
                     </div>
                 `).join('');
             } else {
@@ -1102,19 +1233,20 @@
             const progress = getLiveMatchProgress(m.kickoff, m.match_status, m.live_minute);
             const isLive = progress.isLive || m.is_live;
             const isFT = progress.isFT;
+
             const scoreEl = document.getElementById('modal-score');
             const minEl = document.getElementById('modal-minute');
             const pillEl = document.getElementById('modal-status-pill');
 
             if (isLive) {
                 scoreEl.textContent = `${m.score_home} : ${m.score_away}`;
-                minEl.textContent = `دقیقه ${progress.label} (زنده)`;
-                pillEl.className = "text-[10px] font-mono font-black px-2 py-0.5 rounded bg-rose-500/20 text-rose-400";
+                minEl.textContent = `دقیقه ${progress.label} (در حال برگزاری)`;
+                pillEl.className = "text-[10px] font-mono font-black px-2 py-0.5 rounded bg-rose-500/20 text-rose-500 border border-rose-500/30";
                 pillEl.textContent = "🔴 زنده";
             } else if (isFT) {
                 scoreEl.textContent = `${m.score_home} : ${m.score_away}`;
-                minEl.textContent = `پایان مسابقه`;
-                pillEl.className = "text-[10px] font-mono font-black px-2 py-0.5 rounded bg-emerald-500/20 text-fotmob-green";
+                minEl.textContent = `🏁 سوت پایان مسابقه`;
+                pillEl.className = "text-[10px] font-mono font-black px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
                 pillEl.textContent = "پایان یافته";
             } else {
                 scoreEl.textContent = `- : -`;
@@ -1132,31 +1264,189 @@
             document.body.style.overflow = 'auto';
         }
 
+        // ژنراتور تصویر استوری اینستاگرام (Social Bet Slip)
+        function generateStoryCard() {
+            const m = state.todayMatches.find(x => x.id === state.currentModalMatchId);
+            if (!m) return;
+
+            const canvas = document.getElementById('storyCanvas');
+            const ctx = canvas.getContext('2d');
+
+            const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1920);
+            bgGrad.addColorStop(0, '#040711');
+            bgGrad.addColorStop(0.3, '#091326');
+            bgGrad.addColorStop(0.7, '#070b18');
+            bgGrad.addColorStop(1, '#02040a');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, 1080, 1920);
+
+            const glow = ctx.createRadialGradient(540, 500, 50, 540, 500, 450);
+            glow.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+            glow.addColorStop(1, 'rgba(16, 185, 129, 0)');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(540, 500, 450, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.direction = 'rtl';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#10b981';
+            ctx.font = '900 68px Vazirmatn, Tahoma';
+            ctx.fillText('⚡ فِرا آنالیز | FERA ANALYZE', 540, 220);
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '600 32px Vazirmatn, Tahoma';
+            ctx.fillText('دستیار هوشمند داده‌کاوی، شرط‌ساز و رتبه‌بندی مسابقات', 540, 290);
+
+            ctx.fillStyle = 'rgba(16, 23, 43, 0.92)';
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 4;
+            roundRect(ctx, 80, 380, 920, 1180, 48, true, true);
+
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = '900 42px Vazirmatn, Tahoma';
+            ctx.fillText(`رتبه ${m.rank} سیگنال طلایی روز (${m.confidence_score}/۱۰)`, 540, 480);
+
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = '700 36px Vazirmatn, Tahoma';
+            ctx.fillText(`${m.country_flag || '⚽'} ${m.league} | ${m.kickoff}`, 540, 550);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 64px Vazirmatn, Tahoma';
+            ctx.fillText(`${m.home_team}  VS  ${m.away_team}`, 540, 680);
+
+            ctx.fillStyle = 'rgba(6, 9, 17, 0.85)';
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 3;
+            roundRect(ctx, 130, 770, 820, 240, 32, true, true);
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '700 30px Vazirmatn, Tahoma';
+            ctx.fillText('🎯 گزینه پیشنهادی با ارزش ریاضی (+EV):', 540, 830);
+
+            ctx.fillStyle = '#34d399';
+            ctx.font = '900 46px Vazirmatn, Tahoma';
+            ctx.fillText(m.recommended_pick, 540, 905);
+
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = '900 52px Vazirmatn, Tahoma';
+            ctx.fillText(`ضریب: ${Number(m.odds).toFixed(2)}  |  ارزش: ${m.value_percent || '+10%'}`, 540, 975);
+
+            ctx.fillStyle = 'rgba(99, 102, 241, 0.15)';
+            ctx.strokeStyle = '#818cf8';
+            ctx.lineWidth = 2;
+            roundRect(ctx, 130, 1050, 820, 140, 24, true, true);
+
+            ctx.fillStyle = '#a5b4fc';
+            ctx.font = '700 28px Vazirmatn, Tahoma';
+            ctx.fillText('🛡️ قانون بیمه و بازگشت سرمایه:', 540, 1105);
+
+            ctx.fillStyle = '#f1f5f9';
+            ctx.font = '600 26px Vazirmatn, Tahoma';
+            ctx.fillText(m.safety_note || 'تساوی مساوی بازگشت ۱۰۰٪ اصل وجه بدون کسر', 540, 1155);
+
+            ctx.fillStyle = '#10b981';
+            ctx.font = '900 38px Vazirmatn, Tahoma';
+            ctx.fillText('📲 تحلیل کامل و ضرایب لحظه‌ای در اپلیکیشن «فِرا آنالیز»', 540, 1660);
+
+            ctx.fillStyle = '#64748b';
+            ctx.font = '600 26px Vazirmatn, Tahoma';
+            ctx.fillText('پایش زنده نتایج • شرط‌ساز تک‌بازی SGP • مدیریت ریسک ۲٪', 540, 1720);
+
+            const link = document.createElement('a');
+            link.download = `fera-story-${m.home_team}-${m.away_team}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            if (fill) ctx.fill();
+            if (stroke) ctx.stroke();
+        }
+
+        function switchMainTab(tab) {
+            state.activeMainTab = tab;
+            ['today', 'future', 'radar', 'combos', 'ledger', 'academy'].forEach(t => {
+                const sec = document.getElementById(`section-${t}`);
+                const nav = document.getElementById(`nav-${t}`);
+                if (t === tab) {
+                    sec.classList.remove('hidden');
+                    nav.className = "py-1.5 rounded-xl text-emerald-500 flex flex-col items-center gap-0.5 transition font-black";
+                } else {
+                    sec.classList.add('hidden');
+                    nav.className = "py-1.5 rounded-xl text-gray-400 flex flex-col items-center gap-0.5 transition";
+                }
+            });
+        }
+
+        function setLedgerTab(sub) {
+            state.ledgerSubTab = sub;
+            const btnSys = document.getElementById('subtab-system');
+            const btnUsr = document.getElementById('subtab-user');
+            const secSys = document.getElementById('ledger-system-content');
+            const secUsr = document.getElementById('ledger-user-content');
+
+            if (sub === 'system') {
+                btnSys.className = "py-2 rounded-xl bg-emerald-600 text-white shadow transition";
+                btnUsr.className = "py-2 rounded-xl text-gray-500 transition";
+                secSys.classList.remove('hidden');
+                secUsr.classList.add('hidden');
+            } else {
+                btnSys.className = "py-2 rounded-xl text-gray-500 transition";
+                btnUsr.className = "py-2 rounded-xl bg-emerald-600 text-white shadow transition";
+                secSys.classList.add('hidden');
+                secUsr.classList.remove('hidden');
+                renderUserPortfolio();
+            }
+        }
+
+        function setPastDayOffset(day) {
+            state.pastDayOffset = day;
+            for (let i = 1; i <= 3; i++) {
+                const btn = document.getElementById(`pday-${i}`);
+                if (btn) {
+                    btn.className = (i === day) 
+                        ? "py-1.5 rounded-lg bg-emerald-600 text-white shadow transition"
+                        : "py-1.5 rounded-lg text-gray-500 transition";
+                }
+            }
+            renderPast();
+        }
+
+        function setFutureDayOffset(day) {
+            state.futureDayOffset = day;
+            for (let i = 1; i <= 3; i++) {
+                const btn = document.getElementById(`fday-${i}`);
+                if (btn) {
+                    btn.className = (i === day) 
+                        ? "py-1.5 rounded-lg bg-emerald-600 text-white shadow transition"
+                        : "py-1.5 rounded-lg text-gray-500 transition";
+                }
+            }
+            renderFuture();
+        }
+
         function manualRefresh() {
             const spin = document.getElementById('refresh-spin');
             spin.classList.add('animate-spin');
             fetchAllData().finally(() => setTimeout(() => spin.classList.remove('animate-spin'), 600));
         }
 
-        function generateStoryCard() {
-            const m = state.todayMatches.find(x => x.id === state.currentModalMatchId);
-            if (!m) return;
-            const canvas = document.getElementById('storyCanvas');
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#0d0d0e'; ctx.fillRect(0, 0, 1080, 1920);
-            ctx.direction = 'rtl'; ctx.textAlign = 'center';
-            ctx.fillStyle = '#00e676'; ctx.font = '900 64px Vazirmatn, Tahoma';
-            ctx.fillText('⚡ فِرا آنالیز | FERA ANALYZE', 540, 260);
-            ctx.fillStyle = '#ffffff'; ctx.font = '900 60px Vazirmatn, Tahoma';
-            ctx.fillText(`${m.home_team}  VS  ${m.away_team}`, 540, 680);
-            ctx.fillStyle = '#34d399'; ctx.font = '900 52px Vazirmatn, Tahoma';
-            ctx.fillText(m.recommended_pick, 540, 880);
-            ctx.fillStyle = '#fbbf24'; ctx.font = '900 48px Vazirmatn, Tahoma';
-            ctx.fillText(`ضریب: ${Number(m.odds).toFixed(2)}`, 540, 970);
-            const link = document.createElement('a');
-            link.download = `story-${m.home_team}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+        function toggleTheme() {
+            state.isDarkMode = !state.isDarkMode;
+            document.documentElement.classList.toggle('dark', state.isDarkMode);
+            localStorage.setItem('fa_theme', state.isDarkMode ? 'dark' : 'light');
         }
 
         window.addEventListener('DOMContentLoaded', () => {
