@@ -29,7 +29,7 @@ API_KEY = os.environ.get("RAPIDAPI_KEY", "").strip()
 
 DEFAULT_STAKE = 40000       # مبلغ پایه شرط بر اساس مدیریت سرمایه ۲٪ (تومان)
 LIVE_POLL_INTERVAL = 80     # فاصله استعلام‌ها در زمان بازی زنده (ثانیه)
-SESSION_CYCLES = 3          # چرخه‌های پایش در هر اجرای ورکر گیت‌هاب
+SESSION_CYCLES = 5          # چرخه‌های پایش در هر اجرای ورکر گیت‌هاب
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("❌ خطا: متغیرهای محیطی Supabase تنظیم نشده‌اند.")
@@ -166,6 +166,7 @@ def sync_fixtures_multiday():
     for i in range(5):
         target_date = (now_tehran + datetime.timedelta(days=i)).strftime("%Y-%m-%d")
         day_feed = call_api(f"fixtures?date={target_date}") or []
+        print(f"📅 تاریخ {target_date}: دریافت {len(day_feed)} مسابقه.")
         
         for fix in day_feed:
             fixture_id = fix.get("fixture", {}).get("id")
@@ -177,7 +178,6 @@ def sync_fixtures_multiday():
             home_team = teams.get("home", {}).get("name", "")
             away_team = teams.get("away", {}).get("name", "")
             league_name = league.get("name", "لیگ معتبر")
-            country = league.get("country", "فوتبال")
             
             date_str = fix.get("fixture", {}).get("date", "")
             kickoff_time = "21:00"
@@ -215,7 +215,6 @@ def sync_fixtures_multiday():
             }
 
             if i == 0:
-                # درج در مسابقات امروز
                 try:
                     existing = supabase.table("matches_today").select("id").eq("fixture_id", fixture_id).execute()
                     if not existing.data:
@@ -223,7 +222,6 @@ def sync_fixtures_multiday():
                 except Exception as e:
                     pass
             else:
-                # درج در مسابقات آینده (رادار ۳ روز بعد)
                 match_payload["future_day"] = i
                 try:
                     existing = supabase.table("matches_future").select("id").eq("fixture_id", fixture_id).execute()
@@ -258,7 +256,6 @@ def normalize_text(text: str) -> str:
 
 def evaluate_bet_outcome(category: str, pick_text: str, score_home: int, score_away: int, home_team: str, away_team: str, odds: float):
     diff = score_home - score_away
-    total_goals = score_home + score_away
     norm_pick = normalize_text(pick_text)
     norm_home = normalize_text(home_team)
     norm_away = normalize_text(away_team)
@@ -368,13 +365,11 @@ def sync_live_cycle():
 def main():
     print("🚀 ورکر هوشمند نسل سوم فِرا آنالیز راه‌اندازی شد.")
     
-    # ۱. استعلام و همگام‌سازی مسابقات چندروزه (جلوگیری از خالی ماندن جدول)
     try:
         sync_fixtures_multiday()
     except Exception as e:
         print(f"خطا در همگام‌سازی مسابقات چندروزه: {e}")
 
-    # ۲. نشست پایش زنده
     print(f"🔥 آغاز نشست پایش زنده ({SESSION_CYCLES} چرخه)...")
     for cycle in range(1, SESSION_CYCLES + 1):
         print(f"📡 چرخه پایش {cycle} از {SESSION_CYCLES}...")
